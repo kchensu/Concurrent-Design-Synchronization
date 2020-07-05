@@ -9,9 +9,7 @@
 #include <arpa/inet.h>
 
 
-struct addrinfo hints;
-struct addrinfo *servinfo;
-int status;
+struct sockaddr_in my_addr;
 int sockfd;
 
 
@@ -19,21 +17,21 @@ int sockfd;
 
 int main(int argc, char **argv){
 
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_DGRAM;
-    hints.ai_flags = AI_PASSIVE;
-    
-    if ((status = getaddrinfo(NULL, "3490", &hints, &servinfo)) != 0) {
-        fprintf(stderr,"getaddrinfo error: %s\n", gai_strerror(status));
-        exit(1);
+    sockfd = socket(PF_INET, SOCK_DGRAM, 0);
+
+    my_addr.sin_family = AF_INET;
+    my_addr.sin_port = htons(2200); // ports below 1024 are reserve, can use any port up to 65535
+    my_addr.sin_addr.s_addr = INADDR_ANY;
+    memset(&my_addr, 0, sizeof(my_addr));
+    if (bind(sockfd, (struct sockaddr *)&my_addr, sizeof(my_addr)) == -1){
+        
+        // check if is failed
+        perror("listener: bind");
+
     }
 
-    freeaddrinfo(servinfo);
-
-
-
-
+    close(sockfd);
+    
 
 
     return 0;
