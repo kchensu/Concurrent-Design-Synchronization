@@ -23,6 +23,9 @@ int main(int argc, char **argv){
     for(int i = 0; i < argc; i++){
         printf("Argv %d: %s\n", i, argv[i]);
     }
+    int myport = scanf("enter your port: ");
+    char machineName[100] = scanf("\n enter their machine name");
+    int theirport = scanf("\n enter their port: ");
 
     // hostname
     gethostname(hostname, sizeof(hostname));
