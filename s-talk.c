@@ -10,7 +10,9 @@
 
 
 struct sockaddr_in my_addr;
+struct hostent *h;
 int sockfd;
+char hostname[128];
 
 
 
@@ -22,6 +24,11 @@ int main(int argc, char **argv){
         printf("Argv %d: %s\n", i, argv[i]);
     }
 
+    // hostname
+    gethostname(hostname, sizeof(hostname));
+    printf("The host name is: %s\n", hostname);
+
+  
     sockfd = socket(PF_INET, SOCK_DGRAM, 0);
 
     my_addr.sin_family = AF_INET;
