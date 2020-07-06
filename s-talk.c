@@ -27,8 +27,8 @@ int main(int argc, char **argv){
     // hostname
     // gethostname(hostname, sizeof(hostname));
     // printf("The host name is: %s\n", hostname);
-    int mySocket = (int)argv[1];
-    int theirsocket = (int)argv[2];
+    // int mySocket = (int)argv[1];
+    // int theirsocket = (int)argv[2];
   
     sockfd = socket(PF_INET, SOCK_DGRAM, 0);
     memset(&my_addr, 0, sizeof(my_addr));
@@ -54,6 +54,7 @@ int main(int argc, char **argv){
  
         char buf[MSG_MAX_LENGTH];
         int byteRx = recvfrom(sockfd, buf, MSG_MAX_LENGTH -1 , 0, (struct sockaddr *)&their_addr, &addr_len);
+        printf("Received %s\n:", buf);
 
         memset(&buf, 0, sizeof(buf));
         char messageTx[MSG_MAX_LENGTH];
