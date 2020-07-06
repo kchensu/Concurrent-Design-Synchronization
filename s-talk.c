@@ -24,11 +24,11 @@ int main(int argc, char **argv){
     for(int i = 0; i < argc; i++){
         printf("Port name: %d: %s\n", i, argv[i]);
     }
-
     // hostname
-    gethostname(hostname, sizeof(hostname));
-    printf("The host name is: %s\n", hostname);
-
+    // gethostname(hostname, sizeof(hostname));
+    // printf("The host name is: %s\n", hostname);
+    int mySocket = (int)argv[1];
+    int theirsocket = (int)argv[2];
   
     sockfd = socket(PF_INET, SOCK_DGRAM, 0);
     memset(&my_addr, 0, sizeof(my_addr));
@@ -40,10 +40,8 @@ int main(int argc, char **argv){
     
     
     if (bind(sockfd, (struct sockaddr *)&my_addr, sizeof(my_addr)) == -1){
-        
         // check if is failed
         perror("listener: bind");
-
     }
   
 
@@ -57,15 +55,11 @@ int main(int argc, char **argv){
         char buf[MSG_MAX_LENGTH];
         int byteRx = recvfrom(sockfd, buf, MSG_MAX_LENGTH -1 , 0, (struct sockaddr *)&their_addr, &addr_len);
 
-
-        
-
-        printf("Message receive: %s \n", buf);
         memset(&buf, 0, sizeof(buf));
         char messageTx[MSG_MAX_LENGTH];
   
         unsigned int sin_len = sizeof(their_addr);
-        printf("Type your message:");
+  
         scanf("%s", messageTx);
         sendto(sockfd, messageTx, strlen(messageTx), 0, (struct sockaddr *)&their_addr, sin_len);
         memset(&messageTx, 0, sizeof(messageTx));
@@ -78,9 +72,24 @@ int main(int argc, char **argv){
    
    
 
-    close(sockfd);
-    
+    // struct sockaddr_in sinRemote;
+    //         unsigned int sin_len = sizeof(sinRemote);
+    //         char messageRx[MSG_MAX_LEN];
+    //         int bytesRx = recvfrom(sockfd,
+    //             messageRx, MSG_MAX_LEN, 0,
+    //             (struct sockaddr *) &sinRemote, &sin_len);
 
+    // printf("Message received (%d bytes): \n\n'%s'\n", bytesRx, messageRx);
+	// long remotePort = ntohs(sinRemote.sin_port);
+    // printf("(Port %ld) %s", remotePort, messageRx);
 
-    return 0;
+	// char messageTx[MSG_MAX_LEN];
+    // sin_len = sizeof(sinRemote);
+	// 	sendto( sockfd,
+	// 		messageTx, strlen(messageTx),
+	// 		0,
+	// 		(struct sockaddr *) &sinRemote, sin_len);
+
+    // close(sockfd);
+    // return 0;
 }
