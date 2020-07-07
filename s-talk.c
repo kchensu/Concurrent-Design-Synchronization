@@ -72,7 +72,9 @@ int main(int argc, char **argv){
         sendto(sockfd, messageTx, strlen(messageTx), 0, (struct sockaddr *)&their_addr, addr_len);
         memset(&messageTx, 0, sizeof(messageTx));
 
+
     }
+    printf("Testing this branch\n");
 
     close(sockfd);
 }
