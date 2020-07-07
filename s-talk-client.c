@@ -9,8 +9,9 @@
 #include <arpa/inet.h>
 
 #define MSG_MAX_LENGTH 1024
+#define PORT 2200
 
-struct sockaddr_in my_addr;
+struct sockaddr_in their_addr;
 struct hostent *h, *gethostbyname();
 int sockfd;
 char hostname[128];
@@ -20,51 +21,25 @@ socklen_t addr_len;
 
 int main(int argc, char **argv){
 
-
-    sockfd = socket(PF_INET, SOCK_DGRAM, 0);
-    memset(&my_addr, 0, sizeof(my_addr));
-    my_addr.sin_family = AF_INET;
-    my_addr.sin_port = htons(5000); // ports below 1024 are reserve, can use any port up to 65535
-    my_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    inet_pton(AF_INET, "127.0.0.1",&my_addr.sin_addr);
-
-
-    // clear my_addr pointer
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    memset(&their_addr, 0, sizeof(their_addr));
+    their_addr.sin_family = AF_INET;
+    their_addr.sin_port = htons(PORT);
+    their_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     
-    
-    // if (bind(sockfd, (struct sockaddr *)&their_addr, sizeof(their_addr)) == -1){
-        
-    //     // check if is failed
-    //     perror("listener: bind");
 
-    // }
-  
-  
+    char buffer[MSG_MAX_LENGTH];
     while(1){
-        struct sockaddr_in their_addr;
-        their_addr.sin_family = AF_INET;
-        their_addr.sin_port = htons(6000);
-        their_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-        
+        memset(&buffer, 0, sizeof(buffer));
+        printf("Send Message:");
+        fgets(buffer, MSG_MAX_LENGTH, stdin);
 
-        
+        sendto(sockfd, buffer, strlen(buffer), 0, (struct sockaddr *)&their_addr, sizeof(their_addr));
+        memset(&buffer, 0, sizeof(buffer));
 
-       
-
-        char messageTx[MSG_MAX_LENGTH];
-        unsigned int sin_len = sizeof(their_addr);
-        // printf("Enter the message you want to send to client: ");
-        scanf("%s\n", messageTx);
-        sendto(sockfd, messageTx, strlen(messageTx), 0, (struct sockaddr *)&their_addr, sin_len);
-
-
-        
-
-
-        addr_len = sizeof(their_addr);
-        int byteRx = recvfrom(sockfd, buf, MSG_MAX_LENGTH -1 , 0, (struct sockaddr *)&their_addr, &addr_len);
-        printf("This is from s-talk: %s", buf);
-     
+        //receive from Server
+        recvfrom(sockfd, buffer, MSG_MAX_LENGTH-1, 0, NULL,NULL);
+        printf("server response: %s\n", buffer);
 
     }
 
