@@ -9,9 +9,8 @@
 #include <arpa/inet.h>
 
 #define MSG_MAX_LENGTH 1024
-#define PORT 2200
 
-struct sockaddr_in their_addr;
+
 struct sockaddr_in my_addr;
 struct hostent *h, *gethostbyname();
 int sockfd;
@@ -45,7 +44,7 @@ int main(int argc, char **argv){
     my_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
 
-
+    struct sockaddr_in their_addr;
     their_addr.sin_family = AF_INET;
     their_addr.sin_port = htons(remote_port);
     their_addr.sin_addr.s_addr = inet_addr(inet_ntoa(*((struct in_addr *)h->h_addr )));

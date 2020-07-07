@@ -7,18 +7,20 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <pthread.h>
+#include "list.h"
+
 
 #define MSG_MAX_LENGTH 1024
 // #define PORT 2200
 
 struct sockaddr_in my_addr;
-
 struct hostent *h;
 int sockfd;
 char hostname[128];
-
 socklen_t addr_len;
 
+// https://pubs.opengroup.org/onlinepubs/007908799/xsh/pthread_mutex_lock.html
 
 int main(int argc, char **argv){
     // need to pass in hostname, port, etc
@@ -34,22 +36,8 @@ int main(int argc, char **argv){
     h = gethostbyname(argv[2]);
     printf("Hostname %s\n", h->h_name);
     printf("IP address %s\n", inet_ntoa(*((struct in_addr *)h->h_addr )));
-    char ip_address[1024];
-    
-
-
-
-
     remote_port = atoi(argv[3]);
 
-
-
-
-    
-
-
-
-  
     sockfd = socket(PF_INET, SOCK_DGRAM, 0);
     memset(&my_addr, 0, sizeof(my_addr));
     my_addr.sin_family = AF_INET;
@@ -57,7 +45,6 @@ int main(int argc, char **argv){
     my_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
     // clear my_addr pointer
-    
     
     if (bind(sockfd, (struct sockaddr *)&my_addr, sizeof(my_addr)) == -1){
         // check if is failed
@@ -70,29 +57,20 @@ int main(int argc, char **argv){
     their_addr.sin_port = htons(remote_port);
     their_addr.sin_addr.s_addr = inet_addr(inet_ntoa(*((struct in_addr *)h->h_addr )));
 
-
-
-
-
-
     char buffer[MSG_MAX_LENGTH];
     addr_len = sizeof(their_addr);
   
-
     while(1){
 
-
-       
         recvfrom(sockfd, buffer, MSG_MAX_LENGTH -1 , 0, (struct sockaddr *)&their_addr, &addr_len);
         printf("Received from client: %s\n", buffer);
 
         memset(&buffer, 0, sizeof(buffer));
-        printf("Send message:");
-        
+        printf("Send message:"); 
         char messageTx[MSG_MAX_LENGTH];
         fgets(messageTx, MSG_MAX_LENGTH, stdin);
         sendto(sockfd, messageTx, strlen(messageTx), 0, (struct sockaddr *)&their_addr, addr_len);
-        
+        memset(&messageTx, 0, sizeof(messageTx));
 
     }
 
