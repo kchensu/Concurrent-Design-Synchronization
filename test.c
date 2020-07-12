@@ -12,8 +12,8 @@
 #include <pthread.h>
 
 #define MSG_MAX_LENGTH 1024
-struct addrinfo h_in, *result_in; //h_in points to a struct addrinfo
-struct addrinfo h_out, *result_out;
+struct addrinfo h_in, *result_in; //h_in points to a struct my addrinfo
+struct addrinfo h_out, *result_out; // h_out points to a struct their addrinfo
 struct hostent *h;
 int sockfd;
 List* list_of_print_msgs;
@@ -34,6 +34,7 @@ void* sendUDPDatagram(void* unused);
 
 int main(int argc, char **argv)
 {
+    printf("Starting......\n");
     pthread_t waitKeyboardInput;
     pthread_t waitUDPdatagram;
     pthread_t printCharacters;
@@ -54,7 +55,7 @@ int main(int argc, char **argv)
     h_out.ai_family = AF_UNSPEC;      // don't care IPv4 or IPv6
     h_out.ai_socktype = SOCK_DGRAM;   // UDP
     h_out.ai_flags = AI_PASSIVE;       // fill in IP
-    //printf("passing first argv[1] %s\n", argv[1]);
+    
     getaddrinfo(NULL, argv[1], &h_in, &result_in);
     //make socket
     sockfd = socket(result_in->ai_family, result_in->ai_socktype, result_in->ai_protocol);
@@ -66,10 +67,12 @@ int main(int argc, char **argv)
     //hostname
     
     //host IP
+   
     h = gethostbyname(argv[2]);
     printf("Hostname: %s\n", h->h_name);
+    printf("Local port: %s\n", argv[1]);
     printf("IP address: %s\n", inet_ntoa(*((struct in_addr *)h->h_addr)));
-
+    printf("Remote port: %s\n", argv[3]);
     // http://beej.us/guide/bgnet/pdf/bgnet_usl_c_2.pdf page 26 - 27
     getaddrinfo(inet_ntoa(*(struct in_addr *)h->h_addr_list[0]),
                 argv[3], &h_out, &result_out);
@@ -107,13 +110,18 @@ void* inputFromKeyboard(void* unused){
     while (1) 
     {   
         fgets(buffer, MSG_MAX_LENGTH, stdin);
+        // if msg received =  !, then terminate program
         pthread_mutex_lock(&send_mutex);
-        // add the msg to the list
+        // add the send msg to the list
         List_add(list_of_send_msgs, buffer);
         // wake up the thread that got block because there was no msgs.
         pthread_cond_signal(&send_wait);
         pthread_mutex_unlock(&send_mutex);
-
+        if (strcmp(buffer, "!\n") == 0)
+        {
+            printf("Terminating the app.....\n");
+            exit(1);
+        }
     }
 }
 
@@ -126,9 +134,17 @@ void* receiveUDPDatagram(void* unused)
         while(recvfrom(sockfd, buffer, MSG_MAX_LENGTH, 0,result_out->ai_addr,&(result_out->ai_addrlen))!= -1)
         {
             pthread_mutex_lock(&receive_mutex);
+            // if msg received =  !, then terminate program
+            // add receive msg to the list
             List_add(list_of_print_msgs, buffer);
+            // wake up process that was blocked because there was no msgs in the list
             pthread_cond_signal(&print_wait);
             pthread_mutex_unlock(&receive_mutex);
+            if (strcmp(buffer, "!\n") == 0)
+            {
+                printf("Terminating the app.....\n");
+                exit(1);
+            }
         }
     }
 }
@@ -152,8 +168,9 @@ void* printsMessages(void* unused)
         {
             char * msg;
             msg = List_remove(list_of_print_msgs);
-            strcpy(buffer, msg);
+            strncpy(buffer, msg, sizeof(buffer));
             printf("from remote server: %s", buffer);
+
         }
         pthread_mutex_unlock(&receive_mutex);
     }
@@ -182,7 +199,7 @@ void * sendUDPDatagram(void * unused)
             // remove it from the list
             msg = List_remove(list_of_send_msgs);
             // copy it over to the buffer
-            strcpy(buffer, msg);
+            strncpy(buffer, msg, sizeof(buffer));
 
             // send data over to the remote address.
             // result_out-> ai_addr
