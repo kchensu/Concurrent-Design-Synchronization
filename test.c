@@ -107,9 +107,11 @@ int main(int argc, char **argv)
 //since we add a new message to the List, we must signal to wake up a process that got blocked because there was no messages
 void* inputFromKeyboard(void* unused){
     char buffer[MSG_MAX_LENGTH];
+    
     while (1) 
     {   
-        fgets(buffer, MSG_MAX_LENGTH, stdin);
+        read(0, buffer, MSG_MAX_LENGTH);
+        buffer[MSG_MAX_LENGTH] = '\0';
         // if msg received =  !, then terminate program
         pthread_mutex_lock(&send_mutex);
         // add the send msg to the list
@@ -122,6 +124,8 @@ void* inputFromKeyboard(void* unused){
             printf("Terminating the app.....\n");
             exit(1);
         }
+        
+        
     }
 }
 
@@ -131,6 +135,7 @@ void* receiveUDPDatagram(void* unused)
     char buffer[MSG_MAX_LENGTH];
     while(1)
     {
+
         while(recvfrom(sockfd, buffer, MSG_MAX_LENGTH, 0,result_out->ai_addr,&(result_out->ai_addrlen))!= -1)
         {
             pthread_mutex_lock(&receive_mutex);
@@ -140,12 +145,10 @@ void* receiveUDPDatagram(void* unused)
             // wake up process that was blocked because there was no msgs in the list
             pthread_cond_signal(&print_wait);
             pthread_mutex_unlock(&receive_mutex);
-            if (strcmp(buffer, "!\n") == 0)
-            {
-                printf("Terminating the app.....\n");
-                exit(1);
-            }
+            
+            
         }
+        memset(&buffer, 0, sizeof(buffer));
     }
 }
 
@@ -155,6 +158,7 @@ void* receiveUDPDatagram(void* unused)
 void* printsMessages(void* unused)
 {
     char buffer[MSG_MAX_LENGTH];
+   
     while(1)
     {
         pthread_mutex_lock(&receive_mutex);
@@ -167,12 +171,15 @@ void* printsMessages(void* unused)
         while(List_count(list_of_print_msgs) > 0)
         {
             char * msg;
+            memset(&msg, 0, sizeof(msg));
             msg = List_remove(list_of_print_msgs);
             strncpy(buffer, msg, sizeof(buffer));
-            printf("from remote server: %s", buffer);
+            // printf("from remote server: %s", buffer);
+            write(1, buffer, sizeof(buffer));
 
         }
         pthread_mutex_unlock(&receive_mutex);
+        memset(&buffer, 0, sizeof(buffer));
     }
 }
 
@@ -182,6 +189,7 @@ void* printsMessages(void* unused)
 void * sendUDPDatagram(void * unused)
 {
     char buffer[MSG_MAX_LENGTH];
+   
     while(1)
     {
         pthread_mutex_lock(&send_mutex);
@@ -196,11 +204,15 @@ void * sendUDPDatagram(void * unused)
         while(List_count(list_of_send_msgs) > 0)
         {
             char* msg;
+            memset(&msg, 0, sizeof(msg));
             // remove it from the list
             msg = List_remove(list_of_send_msgs);
             // copy it over to the buffer
-            strncpy(buffer, msg, sizeof(buffer));
 
+            memset(&buffer, 0, sizeof(buffer));
+
+            strncpy(buffer, msg, sizeof(buffer));
+            
             // send data over to the remote address.
             // result_out-> ai_addr
             // result_out-> ai_addrlen
@@ -208,5 +220,7 @@ void * sendUDPDatagram(void * unused)
                     result_out->ai_addr, result_out->ai_addrlen);
         }
         pthread_mutex_unlock(&send_mutex);
+        memset(&buffer, 0, sizeof(buffer));
+       
     }
 }
