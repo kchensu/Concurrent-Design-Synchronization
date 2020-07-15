@@ -106,20 +106,21 @@ int main(int argc, char **argv)
 //Thread which awaits input from the keyboard (add the message from keyboard and put it in a list...) # maybe use List_add?
 //since we add a new message to the List, we must signal to wake up a process that got blocked because there was no messages
 void* inputFromKeyboard(void* unused){
-    char buffer[MSG_MAX_LENGTH];
+    
     
     while (1) 
     {   
-        read(0, buffer, MSG_MAX_LENGTH);
-        buffer[MSG_MAX_LENGTH] = '\0';
+        char* keyboard_buffer = malloc(MSG_MAX_LENGTH);
+        read(0, keyboard_buffer, MSG_MAX_LENGTH);
+        keyboard_buffer[MSG_MAX_LENGTH] = '\0';
         // if msg received =  !, then terminate program
         pthread_mutex_lock(&send_mutex);
         // add the send msg to the list
-        List_add(list_of_send_msgs, buffer);
+        List_add(list_of_send_msgs, keyboard_buffer);
         // wake up the thread that got block because there was no msgs.
         pthread_cond_signal(&send_wait);
         pthread_mutex_unlock(&send_mutex);
-        if (strcmp(buffer, "!\n") == 0)
+        if (strcmp(keyboard_buffer, "!\n") == 0)
         {
             printf("Terminating the app.....\n");
             exit(1);
@@ -128,6 +129,8 @@ void* inputFromKeyboard(void* unused){
         
     }
 }
+
+//list remove is good list free can be used to to free whole list,
 
 //Thread which awaits a UDP datagram (receive from the client) # recvfrom
 void* receiveUDPDatagram(void* unused)
@@ -188,6 +191,9 @@ void* printsMessages(void* unused)
 //then we will remove it from the list, copy to buffer and send it.
 void * sendUDPDatagram(void * unused)
 {
+
+
+    // do i need to malloc this?
     char buffer[MSG_MAX_LENGTH];
    
     while(1)
@@ -212,6 +218,7 @@ void * sendUDPDatagram(void * unused)
             memset(&buffer, 0, sizeof(buffer));
 
             strncpy(buffer, msg, sizeof(buffer));
+            free(msg);
             
             // send data over to the remote address.
             // result_out-> ai_addr
