@@ -106,33 +106,29 @@ int main(int argc, char **argv)
 //Thread which awaits input from the keyboard (add the message from keyboard and put it in a list...) # maybe use List_add?
 //since we add a new message to the List, we must signal to wake up a process that got blocked because there was no messages
 void* inputFromKeyboard(void* unused){
-    char buffer[MSG_MAX_LENGTH];
-    memset(&buffer, 0, sizeof(buffer));
+    
     
     while (1) 
     {   
-        read(0, buffer, MSG_MAX_LENGTH);
-        buffer[MSG_MAX_LENGTH] = '\0';
+        char* keyboard_buffer = malloc(MSG_MAX_LENGTH);
+        read(0, keyboard_buffer, MSG_MAX_LENGTH);
+        keyboard_buffer[MSG_MAX_LENGTH] = '\0';
         // if msg received =  !, then terminate program
         pthread_mutex_lock(&send_mutex);
         // add the send msg to the list
-        List_add(list_of_send_msgs, buffer);
+        List_add(list_of_send_msgs, keyboard_buffer);
         // wake up the thread that got block because there was no msgs.
         pthread_cond_signal(&send_wait);
-        pthread_mutex_unlock(&send_mutex);
-        // if (strcmp(buffer, "!\n") == 0)
-        // {
-        //     printf("Terminating the app.....\n");
-        //     exit(1);
-        // }
-     
+        pthread_mutex_unlock(&send_mutex);    
     }
 }
+
+//list remove is good list free can be used to to free whole list,
 
 //Thread which awaits a UDP datagram (receive from the client) # recvfrom
 void* receiveUDPDatagram(void* unused)
 {
-    char buffer[MSG_MAX_LENGTH];
+    char* buffer = malloc(MSG_MAX_LENGTH);
     while(1)
     {
 
@@ -144,7 +140,7 @@ void* receiveUDPDatagram(void* unused)
             List_add(list_of_print_msgs, buffer);
             // wake up process that was blocked because there was no msgs in the list
             pthread_cond_signal(&print_wait);
-            pthread_mutex_unlock(&receive_mutex);    
+            pthread_mutex_unlock(&receive_mutex);
         }
         memset(&buffer, 0, sizeof(buffer));
     }
@@ -156,7 +152,8 @@ void* receiveUDPDatagram(void* unused)
 void* printsMessages(void* unused)
 {
     char buffer[MSG_MAX_LENGTH];
-   
+    char* msg;
+
     while(1)
     {
         pthread_mutex_lock(&receive_mutex);
@@ -168,18 +165,21 @@ void* printsMessages(void* unused)
         // what if there are msgs in the list? then print them out
         while(List_count(list_of_print_msgs) > 0)
         {
-            memset(&buffer, 0, sizeof(buffer));
-            // printf("The count for msg list: %d\n", List_count(list_of_print_msgs));
-            char * msg;
             memset(&msg, 0, sizeof(msg));
             msg = List_remove(list_of_print_msgs);
             strncpy(buffer, msg, sizeof(buffer));
-            printf("from remote server: %s", buffer);
-            // write(1, buffer, sizeof(buffer));
+            // printf("from remote server: %s", buffer);
+            write(1, buffer, sizeof(buffer));
 
         }
         pthread_mutex_unlock(&receive_mutex);
-        
+        if (strcmp(buffer, "!\n") == 0)
+        {
+            printf("Terminating the app.....\n");
+            free(msg);
+            exit(1);
+        }
+        memset(&buffer, 0, sizeof(buffer));
     }
 }
 
@@ -188,6 +188,9 @@ void* printsMessages(void* unused)
 //then we will remove it from the list, copy to buffer and send it.
 void * sendUDPDatagram(void * unused)
 {
+
+
+    // do i need to malloc this?
     char buffer[MSG_MAX_LENGTH];
    
     while(1)
@@ -208,7 +211,11 @@ void * sendUDPDatagram(void * unused)
             // remove it from the list
             msg = List_remove(list_of_send_msgs);
             // copy it over to the buffer
+
+            memset(&buffer, 0, sizeof(buffer));
+
             strncpy(buffer, msg, sizeof(buffer));
+            free(msg);
             
             // send data over to the remote address.
             // result_out-> ai_addr
@@ -217,7 +224,12 @@ void * sendUDPDatagram(void * unused)
                     result_out->ai_addr, result_out->ai_addrlen);
         }
         pthread_mutex_unlock(&send_mutex);
-        
+        if (strcmp(buffer, "!\n") == 0)
+        {
+            printf("Terminating the app.....\n");
+            exit(1);
+        }
+        memset(&buffer, 0, sizeof(buffer));
        
     }
 }
