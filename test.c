@@ -21,6 +21,11 @@ List* list_of_send_msgs;
 pthread_mutex_t receive_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t send_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+pthread_t waitKeyboardInput;
+pthread_t waitUDPdatagram;
+pthread_t printCharacters;
+pthread_t sendDataOver;
+
 // condition variable to check if there is an item on the list.
 // if no item available, we would wait
 pthread_cond_t print_wait;
@@ -30,15 +35,24 @@ void* inputFromKeyboard(void* unused);
 void* receiveUDPDatagram(void* unused);
 void* printsMessages(void* unused);
 void* sendUDPDatagram(void* unused);
+void shutDownAll();
 
+char* recieve_buffer;
+char* keyboard_buffer;
 
+void FreeItem(void* item)
+{
+    free(item);
+}
 int main(int argc, char **argv)
 {
+    if(argc!=4){
+        printf("args: %d", argc);
+        fprintf(stderr,"usage: enter all required parameters\n");
+        return 1;
+    }
+    int status;
     printf("Starting......\n");
-    pthread_t waitKeyboardInput;
-    pthread_t waitUDPdatagram;
-    pthread_t printCharacters;
-    pthread_t sendDataOver;
     // create two list one to print characters the other to send data over
     list_of_print_msgs = List_create();
     list_of_send_msgs = List_create();
@@ -56,13 +70,24 @@ int main(int argc, char **argv)
     h_out.ai_socktype = SOCK_DGRAM;   // UDP
     h_out.ai_flags = AI_PASSIVE;       // fill in IP
     
-    getaddrinfo(NULL, argv[1], &h_in, &result_in);
+  
+    if ((status = getaddrinfo(NULL, argv[1], &h_in, &result_in)) != 0) {
+        fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(status));
+        exit(1);
+    }
     //make socket
-    sockfd = socket(result_in->ai_family, result_in->ai_socktype, result_in->ai_protocol);
+    if ((sockfd = socket(result_in->ai_family, result_in->ai_socktype, result_in->ai_protocol)) == -1) {
+             perror("socket"); 
+             exit(1);
+    }
 
     // bind it to the port we passed in to addrinfo
 
-    bind(sockfd, result_in->ai_addr, result_in->ai_addrlen);
+    if (bind(sockfd, result_in->ai_addr, result_in->ai_addrlen) == -1) { 
+        close(sockfd);
+        perror("server: bind");
+        exit(1);
+    }
 
     //hostname
     
@@ -99,8 +124,13 @@ int main(int argc, char **argv)
     pthread_join(sendDataOver, NULL);
     printf("Closing.....");
     close(sockfd);
-    return 0;
 
+
+
+    // do we need to freeaddrinfo(res);?????
+    //freeaddrinfo((struct in_addr *)h);
+
+    return 0;
 }
 
 //Thread which awaits input from the keyboard (add the message from keyboard and put it in a list...) # maybe use List_add?
@@ -110,16 +140,73 @@ void* inputFromKeyboard(void* unused){
     
     while (1) 
     {   
-        char* keyboard_buffer = malloc(MSG_MAX_LENGTH);
+        keyboard_buffer = malloc(MSG_MAX_LENGTH);
         read(0, keyboard_buffer, MSG_MAX_LENGTH);
-        keyboard_buffer[MSG_MAX_LENGTH] = '\0';
-        // if msg received =  !, then terminate program
+        keyboard_buffer[MSG_MAX_LENGTH -1] = '\0';
         pthread_mutex_lock(&send_mutex);
         // add the send msg to the list
         List_add(list_of_send_msgs, keyboard_buffer);
         // wake up the thread that got block because there was no msgs.
+        free(keyboard_buffer);
         pthread_cond_signal(&send_wait);
         pthread_mutex_unlock(&send_mutex);    
+    }
+}
+
+
+//Thread which sends data to the remote Unix process over the network using UDP (send to client) # sendto
+//check if there is a message to be sent in the list? if is zero, we make this thread wait, is there is a message waiting,
+//then we will remove it from the list, copy to buffer and send it.
+void * sendUDPDatagram(void * unused)
+{
+    // do i need to malloc this?
+    char buffer[MSG_MAX_LENGTH];
+    char* msg;
+
+   
+    while(1)
+    {
+        pthread_mutex_lock(&send_mutex);
+        // check if the lost contain any msgs that needs to be sent over.
+        // if no msgs then we will wait.
+        if (List_count(list_of_send_msgs) == 0)
+        {
+            // wait here
+            pthread_cond_wait(&send_wait, &send_mutex);
+        }
+        // if the list contain msgs that are waiting to get sent over
+        while(List_count(list_of_send_msgs) > 0)
+        {
+            int numbytes;
+            memset(&msg, 0, sizeof(msg));
+            // remove it from the list
+            msg = List_remove(list_of_send_msgs);
+            // copy it over to the buffer
+
+            memset(&buffer, 0, sizeof(buffer));
+
+            strncpy(buffer, msg, sizeof(buffer));    
+            // send data over to the remote address.
+            // result_out-> ai_addr
+            // result_out-> ai_addrlen
+
+            //use strlen instead of sizeof???????
+            if ((numbytes = sendto(sockfd, buffer, sizeof(buffer), 0, result_out->ai_addr, result_out->ai_addrlen)) == -1) {
+                perror("talker: sendto");
+                exit(1); 
+            }
+
+        }
+        pthread_mutex_unlock(&send_mutex);
+        if (strcmp(buffer, "!\n") == 0)
+        {
+            //free(msg);
+            shutDownAll();
+        }
+        // will never get here if shutdown called?
+        //free(msg);
+        memset(&buffer, 0, sizeof(buffer));
+       
     }
 }
 
@@ -128,21 +215,24 @@ void* inputFromKeyboard(void* unused){
 //Thread which awaits a UDP datagram (receive from the client) # recvfrom
 void* receiveUDPDatagram(void* unused)
 {
-    char* buffer = malloc(MSG_MAX_LENGTH);
-    while(1)
+    int numbytes;
+    while (1)
     {
-
-        while(recvfrom(sockfd, buffer, MSG_MAX_LENGTH, 0,result_out->ai_addr,&(result_out->ai_addrlen))!= -1)
-        {
-            pthread_mutex_lock(&receive_mutex);
-            // if msg received =  !, then terminate program
-            // add receive msg to the list
-            List_add(list_of_print_msgs, buffer);
-            // wake up process that was blocked because there was no msgs in the list
-            pthread_cond_signal(&print_wait);
-            pthread_mutex_unlock(&receive_mutex);
+        recieve_buffer = malloc(MSG_MAX_LENGTH);
+        if ((numbytes = recvfrom(sockfd, recieve_buffer, MSG_MAX_LENGTH, 0,result_out->ai_addr,&(result_out->ai_addrlen))) == -1) {
+            perror("recv");
+            exit(1);
         }
-        memset(&buffer, 0, sizeof(buffer));
+        
+        pthread_mutex_lock(&receive_mutex);
+        // if msg received =  !, then terminate program
+        // add receive msg to the list
+        List_add(list_of_print_msgs, recieve_buffer);
+        free(recieve_buffer);
+        // wake up process that was blocked because there was no msgs in the list
+        pthread_cond_signal(&print_wait);
+        pthread_mutex_unlock(&receive_mutex);
+        memset(&recieve_buffer, 0, sizeof(recieve_buffer));
     }
 }
 
@@ -168,6 +258,8 @@ void* printsMessages(void* unused)
             memset(&msg, 0, sizeof(msg));
             msg = List_remove(list_of_print_msgs);
             strncpy(buffer, msg, sizeof(buffer));
+        
+
             // printf("from remote server: %s", buffer);
             write(1, buffer, sizeof(buffer));
 
@@ -175,61 +267,25 @@ void* printsMessages(void* unused)
         pthread_mutex_unlock(&receive_mutex);
         if (strcmp(buffer, "!\n") == 0)
         {
-            printf("Terminating the app.....\n");
-            free(msg);
-            exit(1);
+            //free(msg);
+            shutDownAll();
         }
+        //free(msg);
         memset(&buffer, 0, sizeof(buffer));
     }
 }
-
-//Thread which sends data to the remote Unix process over the network using UDP (send to client) # sendto
-//check if there is a message to be sent in the list? if is zero, we make this thread wait, is there is a message waiting,
-//then we will remove it from the list, copy to buffer and send it.
-void * sendUDPDatagram(void * unused)
+void shutDownAll()
 {
+    printf("Terminating the app.....\n");
+    pthread_cancel(waitKeyboardInput);
+    pthread_cancel(waitUDPdatagram);
+    pthread_cancel(printCharacters);
+    pthread_cancel(sendDataOver);
 
-
-    // do i need to malloc this?
-    char buffer[MSG_MAX_LENGTH];
-   
-    while(1)
-    {
-        pthread_mutex_lock(&send_mutex);
-        // check if the lost contain any msgs that needs to be sent over.
-        // if no msgs then we will wait.
-        if (List_count(list_of_send_msgs) == 0)
-        {
-            // wait here
-            pthread_cond_wait(&send_wait, &send_mutex);
-        }
-        // if the list contain msgs that are waiting to get sent over
-        while(List_count(list_of_send_msgs) > 0)
-        {
-            char* msg;
-            memset(&msg, 0, sizeof(msg));
-            // remove it from the list
-            msg = List_remove(list_of_send_msgs);
-            // copy it over to the buffer
-
-            memset(&buffer, 0, sizeof(buffer));
-
-            strncpy(buffer, msg, sizeof(buffer));
-            free(msg);
-            
-            // send data over to the remote address.
-            // result_out-> ai_addr
-            // result_out-> ai_addrlen
-            sendto(sockfd,buffer, sizeof(buffer), 0, 
-                    result_out->ai_addr, result_out->ai_addrlen);
-        }
-        pthread_mutex_unlock(&send_mutex);
-        if (strcmp(buffer, "!\n") == 0)
-        {
-            printf("Terminating the app.....\n");
-            exit(1);
-        }
-        memset(&buffer, 0, sizeof(buffer));
-       
-    }
+    
+    printf("Closing.....");
+    close(sockfd);
+    //List_free(list_of_print_msgs,FreeItem);
+    //List_free(list_of_send_msgs,FreeItem);
+    //exit(1);
 }
