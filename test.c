@@ -37,8 +37,8 @@ void* printsMessages(void* unused);
 void* sendUDPDatagram(void* unused);
 void shutDownAll();
 
-char* recieve_buffer;
-char* keyboard_buffer;
+static char* recieve_buffer = NULL;
+static char* keyboard_buffer = NULL;
 
 void FreeItem(void* item)
 {
@@ -106,8 +106,6 @@ int main(int argc, char **argv)
                     exit(1);
                 }
 
-    freeaddrinfo(result_in);
-    freeaddrinfo(result_out);
     // create 4 threads for each function
     // Brian workshop # 8
     //One of the threads does nothing other than await input from the keyboard. 
@@ -129,10 +127,9 @@ int main(int argc, char **argv)
     pthread_join(printCharacters, NULL);
     pthread_join(sendDataOver, NULL);
     printf("Closing.....");
+    freeaddrinfo(result_in);
+    freeaddrinfo(result_out);
     close(sockfd);
-
-
-
     // do we need to freeaddrinfo(res);?????
     //freeaddrinfo((struct in_addr *)h);
 
@@ -160,7 +157,6 @@ void* inputFromKeyboard(void* unused){
         // it will free the buffer before printing.
         pthread_cond_signal(&send_wait);
         pthread_mutex_unlock(&send_mutex);  
-         
     }
 }
 
@@ -212,7 +208,7 @@ void * sendUDPDatagram(void * unused)
         pthread_mutex_unlock(&send_mutex);
         if (strcmp(buffer, "!\n") == 0)
         {
-            //free(msg);
+            free(msg);
             shutDownAll();
         }
         // will never get here if shutdown called?
@@ -245,6 +241,7 @@ void* receiveUDPDatagram(void* unused)
         pthread_cond_signal(&print_wait);
         pthread_mutex_unlock(&receive_mutex);
         memset(&recieve_buffer, 0, sizeof(recieve_buffer));
+       
     }
 }
 
@@ -284,6 +281,7 @@ void* printsMessages(void* unused)
         pthread_mutex_unlock(&receive_mutex);
         if (strcmp(buffer, "!\n") == 0)
         {
+            free(msg);
             shutDownAll();
         }
         free(msg);
@@ -297,12 +295,15 @@ void shutDownAll()
     pthread_cancel(waitUDPdatagram);
     pthread_cancel(printCharacters);
     pthread_cancel(sendDataOver);
-
-    
+    free(recieve_buffer);
+    free(keyboard_buffer);
+    recieve_buffer = NULL;
+    keyboard_buffer = NULL;
     printf("Closing.....");
     close(sockfd);
     List_free(list_of_print_msgs,FreeItem);
     List_free(list_of_send_msgs,FreeItem);
+   
 
    
     //exit(1);
