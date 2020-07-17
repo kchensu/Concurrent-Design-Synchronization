@@ -99,8 +99,13 @@ int main(int argc, char **argv)
     printf("IP address: %s\n", inet_ntoa(*((struct in_addr *)h->h_addr)));
     printf("Remote port: %s\n", argv[3]);
     // http://beej.us/guide/bgnet/pdf/bgnet_usl_c_2.pdf page 26 - 27
-    getaddrinfo(inet_ntoa(*(struct in_addr *)h->h_addr_list[0]),
-                argv[3], &h_out, &result_out);
+    int status1;
+    if ((status1 = getaddrinfo(inet_ntoa(*(struct in_addr *)h->h_addr_list[0]),
+                argv[3], &h_out, &result_out)) != 0) {
+                    fprintf(stderr, "getaddrinfo (outgoing) %s\n", gai_strerror(status1));
+                    exit(1);
+                }
+
     
     // create 4 threads for each function
     // Brian workshop # 8
@@ -137,19 +142,25 @@ int main(int argc, char **argv)
 //since we add a new message to the List, we must signal to wake up a process that got blocked because there was no messages
 void* inputFromKeyboard(void* unused){
     
-    
+    int n;
     while (1) 
     {   
         keyboard_buffer = malloc(MSG_MAX_LENGTH);
-        read(0, keyboard_buffer, MSG_MAX_LENGTH);
+        n = read(0, keyboard_buffer, MSG_MAX_LENGTH);
+        if (n < 0){
+            herror("Error reading from keyboard");
+        }
         keyboard_buffer[MSG_MAX_LENGTH -1] = '\0';
         pthread_mutex_lock(&send_mutex);
         // add the send msg to the list
         List_add(list_of_send_msgs, keyboard_buffer);
         // wake up the thread that got block because there was no msgs.
-        free(keyboard_buffer);
+        // don't think free this here is a good idea.
+        // it will free the buffer before printing.
+        // free(keyboard_buffer); 
         pthread_cond_signal(&send_wait);
-        pthread_mutex_unlock(&send_mutex);    
+        pthread_mutex_unlock(&send_mutex);  
+         
     }
 }
 
@@ -177,6 +188,7 @@ void * sendUDPDatagram(void * unused)
         // if the list contain msgs that are waiting to get sent over
         while(List_count(list_of_send_msgs) > 0)
         {
+            
             int numbytes;
             memset(&msg, 0, sizeof(msg));
             // remove it from the list
@@ -189,7 +201,7 @@ void * sendUDPDatagram(void * unused)
             // send data over to the remote address.
             // result_out-> ai_addr
             // result_out-> ai_addrlen
-
+           
             //use strlen instead of sizeof???????
             if ((numbytes = sendto(sockfd, buffer, sizeof(buffer), 0, result_out->ai_addr, result_out->ai_addrlen)) == -1) {
                 perror("talker: sendto");
@@ -228,7 +240,7 @@ void* receiveUDPDatagram(void* unused)
         // if msg received =  !, then terminate program
         // add receive msg to the list
         List_add(list_of_print_msgs, recieve_buffer);
-        free(recieve_buffer);
+        //free(recieve_buffer);
         // wake up process that was blocked because there was no msgs in the list
         pthread_cond_signal(&print_wait);
         pthread_mutex_unlock(&receive_mutex);
@@ -243,6 +255,7 @@ void* printsMessages(void* unused)
 {
     char buffer[MSG_MAX_LENGTH];
     char* msg;
+    int n;
 
     while(1)
     {
@@ -260,8 +273,12 @@ void* printsMessages(void* unused)
             strncpy(buffer, msg, sizeof(buffer));
         
 
-            // printf("from remote server: %s", buffer);
-            write(1, buffer, sizeof(buffer));
+            //printf("from remote server: %s", buffer);
+            n = write(1, buffer, sizeof(buffer));
+            if (n < 0){
+                herror("Error writing to screen");
+            }
+            
 
         }
         pthread_mutex_unlock(&receive_mutex);
