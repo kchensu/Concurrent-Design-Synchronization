@@ -106,7 +106,8 @@ int main(int argc, char **argv)
                     exit(1);
                 }
 
-    
+    freeaddrinfo(result_in);
+    freeaddrinfo(result_out);
     // create 4 threads for each function
     // Brian workshop # 8
     //One of the threads does nothing other than await input from the keyboard. 
@@ -303,7 +304,6 @@ void shutDownAll()
     List_free(list_of_print_msgs,FreeItem);
     List_free(list_of_send_msgs,FreeItem);
 
-    freeaddrinfo(result_in);
-    freeaddrinfo(result_out);
+   
     //exit(1);
 }
