@@ -105,6 +105,8 @@ int main(int argc, char **argv)
                     fprintf(stderr, "getaddrinfo (outgoing) %s\n", gai_strerror(status1));
                     exit(1);
                 }
+    
+    
 
     
     // create 4 threads for each function
@@ -194,9 +196,7 @@ void * sendUDPDatagram(void * unused)
             // remove it from the list
             msg = List_remove(list_of_send_msgs);
             // copy it over to the buffer
-
             memset(&buffer, 0, sizeof(buffer));
-
             strncpy(buffer, msg, sizeof(buffer));    
             // send data over to the remote address.
             // result_out-> ai_addr
@@ -207,7 +207,6 @@ void * sendUDPDatagram(void * unused)
                 perror("talker: sendto");
                 exit(1); 
             }
-
         }
         pthread_mutex_unlock(&send_mutex);
         if (strcmp(buffer, "!\n") == 0)
@@ -298,8 +297,8 @@ void shutDownAll()
     pthread_cancel(waitUDPdatagram);
     pthread_cancel(printCharacters);
     pthread_cancel(sendDataOver);
-
-    
+    freeaddrinfo(result_in);
+    freeaddrinfo(result_out);    
     printf("Closing.....");
     close(sockfd);
     //List_free(list_of_print_msgs,FreeItem);
