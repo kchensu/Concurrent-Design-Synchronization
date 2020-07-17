@@ -112,7 +112,7 @@ void* inputFromKeyboard(void* unused){
     {   
         char* keyboard_buffer = malloc(MSG_MAX_LENGTH);
         read(0, keyboard_buffer, MSG_MAX_LENGTH);
-        keyboard_buffer[MSG_MAX_LENGTH] = '\0';
+        //keyboard_buffer[MSG_MAX_LENGTH - 1] = '\0';
         // if msg received =  !, then terminate program
         pthread_mutex_lock(&send_mutex);
         // add the send msg to the list
@@ -142,7 +142,7 @@ void* receiveUDPDatagram(void* unused)
             pthread_cond_signal(&print_wait);
             pthread_mutex_unlock(&receive_mutex);
         }
-        memset(&buffer, 0, sizeof(buffer));
+        // memset(&buffer, 0, sizeof(buffer));
     }
 }
 
@@ -167,7 +167,9 @@ void* printsMessages(void* unused)
         {
             memset(&msg, 0, sizeof(msg));
             msg = List_remove(list_of_print_msgs);
-            strncpy(buffer, msg, sizeof(buffer));
+
+
+            strncpy(buffer, msg, MSG_MAX_LENGTH);
             // printf("from remote server: %s", buffer);
             write(1, buffer, sizeof(buffer));
 
@@ -188,8 +190,6 @@ void* printsMessages(void* unused)
 //then we will remove it from the list, copy to buffer and send it.
 void * sendUDPDatagram(void * unused)
 {
-
-
     // do i need to malloc this?
     char buffer[MSG_MAX_LENGTH];
    
@@ -213,9 +213,10 @@ void * sendUDPDatagram(void * unused)
             // copy it over to the buffer
 
             memset(&buffer, 0, sizeof(buffer));
+            strncpy(buffer, msg, MSG_MAX_LENGTH);
 
-            strncpy(buffer, msg, sizeof(buffer));
-            free(msg);
+            // strncpy(buffer, msg, MSG_MAX_LENGTH);
+            // free(msg);
             
             // send data over to the remote address.
             // result_out-> ai_addr
