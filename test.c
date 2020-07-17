@@ -77,7 +77,7 @@ int main(int argc, char **argv)
     }
     //make socket
     if ((sockfd = socket(result_in->ai_family, result_in->ai_socktype, result_in->ai_protocol)) == -1) {
-             perror("socket"); 
+             perror("socket creation failed"); 
              exit(1);
     }
 
@@ -85,7 +85,7 @@ int main(int argc, char **argv)
 
     if (bind(sockfd, result_in->ai_addr, result_in->ai_addrlen) == -1) { 
         close(sockfd);
-        perror("server: bind");
+        perror("bind failed");
         exit(1);
     }
 
@@ -157,7 +157,6 @@ void* inputFromKeyboard(void* unused){
         // wake up the thread that got block because there was no msgs.
         // don't think free this here is a good idea.
         // it will free the buffer before printing.
-        // free(keyboard_buffer); 
         pthread_cond_signal(&send_wait);
         pthread_mutex_unlock(&send_mutex);  
          
@@ -197,7 +196,7 @@ void * sendUDPDatagram(void * unused)
 
             memset(&buffer, 0, sizeof(buffer));
 
-            strncpy(buffer, msg, sizeof(buffer));    
+            strncpy(buffer, msg, sizeof(buffer));   
             // send data over to the remote address.
             // result_out-> ai_addr
             // result_out-> ai_addrlen
@@ -216,7 +215,7 @@ void * sendUDPDatagram(void * unused)
             shutDownAll();
         }
         // will never get here if shutdown called?
-        //free(msg);
+        free(msg);
         memset(&buffer, 0, sizeof(buffer));
        
     }
@@ -240,7 +239,7 @@ void* receiveUDPDatagram(void* unused)
         // if msg received =  !, then terminate program
         // add receive msg to the list
         List_add(list_of_print_msgs, recieve_buffer);
-        //free(recieve_buffer);
+
         // wake up process that was blocked because there was no msgs in the list
         pthread_cond_signal(&print_wait);
         pthread_mutex_unlock(&receive_mutex);
@@ -284,10 +283,9 @@ void* printsMessages(void* unused)
         pthread_mutex_unlock(&receive_mutex);
         if (strcmp(buffer, "!\n") == 0)
         {
-            //free(msg);
             shutDownAll();
         }
-        //free(msg);
+        free(msg);
         memset(&buffer, 0, sizeof(buffer));
     }
 }
@@ -302,7 +300,10 @@ void shutDownAll()
     
     printf("Closing.....");
     close(sockfd);
-    //List_free(list_of_print_msgs,FreeItem);
-    //List_free(list_of_send_msgs,FreeItem);
+    List_free(list_of_print_msgs,FreeItem);
+    List_free(list_of_send_msgs,FreeItem);
+
+    freeaddrinfo(result_in);
+    freeaddrinfo(result_out);
     //exit(1);
 }
