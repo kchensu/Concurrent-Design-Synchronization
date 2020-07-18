@@ -39,6 +39,7 @@ void shutDownAll();
 
 static char* recieve_buffer = NULL;
 static char* keyboard_buffer = NULL;
+static int n;
 
 void FreeItem(void* item)
 {
@@ -75,6 +76,7 @@ int main(int argc, char **argv)
         fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(status));
         exit(1);
     }
+
     //make socket
     if ((sockfd = socket(result_in->ai_family, result_in->ai_socktype, result_in->ai_protocol)) == -1) {
              perror("socket creation failed"); 
@@ -88,9 +90,7 @@ int main(int argc, char **argv)
         perror("bind failed");
         exit(1);
     }
-
-    //hostname
-    
+    //hostname    
     //host IP
    
     h = gethostbyname(argv[2]);
@@ -129,7 +129,7 @@ int main(int argc, char **argv)
     printf("Closing.....");
     freeaddrinfo(result_in);
     freeaddrinfo(result_out);
-    close(sockfd);
+    //close(sockfd);
     // do we need to freeaddrinfo(res);?????
     //freeaddrinfo((struct in_addr *)h);
 
@@ -140,15 +140,20 @@ int main(int argc, char **argv)
 //since we add a new message to the List, we must signal to wake up a process that got blocked because there was no messages
 void* inputFromKeyboard(void* unused){
     
-    int n;
+    
     while (1) 
     {   
         keyboard_buffer = malloc(MSG_MAX_LENGTH);
         n = read(0, keyboard_buffer, MSG_MAX_LENGTH);
+        
+        printf("number of bytes read from keyboard: %d\n", n);
+        //printf("the number of bytes read: %d\n", n);
         if (n < 0){
             herror("Error reading from keyboard");
         }
-        keyboard_buffer[MSG_MAX_LENGTH -1] = '\0';
+        int terminateIdx = (n < MSG_MAX_LENGTH) ? n : MSG_MAX_LENGTH - 1;
+        keyboard_buffer[terminateIdx] = 0;
+        
         pthread_mutex_lock(&send_mutex);
         // add the send msg to the list
         List_add(list_of_send_msgs, keyboard_buffer);
@@ -193,7 +198,7 @@ void * sendUDPDatagram(void * unused)
 
             memset(&buffer, 0, sizeof(buffer));
 
-            strncpy(buffer, msg, sizeof(buffer));   
+            strncpy(buffer, msg, strlen(msg));   
             // send data over to the remote address.
             // result_out-> ai_addr
             // result_out-> ai_addrlen
@@ -209,10 +214,16 @@ void * sendUDPDatagram(void * unused)
         if (strcmp(buffer, "!\n") == 0)
         {
             free(msg);
+            free(recieve_buffer);
+            free(keyboard_buffer);
+            recieve_buffer = NULL;
+            keyboard_buffer = NULL;
             shutDownAll();
         }
         // will never get here if shutdown called?
         free(msg);
+       
+
         memset(&buffer, 0, sizeof(buffer));
        
     }
@@ -245,14 +256,13 @@ void* receiveUDPDatagram(void* unused)
     }
 }
 
-
 //Thread which prints characters to the screen (checks the list for msgs)
 //use List_count? if is zero, then wait, otherwise print msg
 void* printsMessages(void* unused)
 {
     char buffer[MSG_MAX_LENGTH];
     char* msg;
-    int n;
+   
 
     while(1)
     {
@@ -271,17 +281,21 @@ void* printsMessages(void* unused)
         
 
             //printf("from remote server: %s", buffer);
-            n = write(1, buffer, sizeof(buffer));
+            n = write(1, buffer, strlen(buffer));
+            printf("write %d\n", n);
             if (n < 0){
                 herror("Error writing to screen");
-            }
-            
+            }  
 
         }
         pthread_mutex_unlock(&receive_mutex);
         if (strcmp(buffer, "!\n") == 0)
         {
             free(msg);
+            free(recieve_buffer);
+            free(keyboard_buffer);
+            recieve_buffer = NULL;
+            keyboard_buffer = NULL;
             shutDownAll();
         }
         free(msg);
@@ -295,16 +309,13 @@ void shutDownAll()
     pthread_cancel(waitUDPdatagram);
     pthread_cancel(printCharacters);
     pthread_cancel(sendDataOver);
-    free(recieve_buffer);
-    free(keyboard_buffer);
-    recieve_buffer = NULL;
-    keyboard_buffer = NULL;
-    printf("Closing.....");
+    pthread_cond_destroy(&print_wait);
+    pthread_cond_destroy(&send_wait);
+    pthread_mutex_destroy(&receive_mutex);
+    pthread_mutex_destroy(&send_mutex);
     close(sockfd);
     List_free(list_of_print_msgs,FreeItem);
     List_free(list_of_send_msgs,FreeItem);
-   
-
-   
+    printf("Closing.....\n");
     //exit(1);
 }
