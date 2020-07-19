@@ -140,20 +140,34 @@ int main(int argc, char **argv)
 //since we add a new message to the List, we must signal to wake up a process that got blocked because there was no messages
 void* inputFromKeyboard(void* unused){
     
-    
     while (1) 
     {   
         keyboard_buffer = malloc(MSG_MAX_LENGTH);
         n = read(0, keyboard_buffer, MSG_MAX_LENGTH);
         
-        printf("number of bytes read from keyboard: %d\n", n);
         //printf("the number of bytes read: %d\n", n);
         if (n < 0){
             herror("Error reading from keyboard");
         }
         int terminateIdx = (n < MSG_MAX_LENGTH) ? n : MSG_MAX_LENGTH - 1;
-        keyboard_buffer[terminateIdx] = 0;
+        keyboard_buffer[terminateIdx] = 0;\
+        printf("sending over: %zu\n", strlen(keyboard_buffer));
+        if (n == 0){
+            break;
+        }
+       
+
         
+
+       
+        
+       
+       
+       
+        
+       
+       
+
         pthread_mutex_lock(&send_mutex);
         // add the send msg to the list
         List_add(list_of_send_msgs, keyboard_buffer);
@@ -163,6 +177,7 @@ void* inputFromKeyboard(void* unused){
         pthread_cond_signal(&send_wait);
         pthread_mutex_unlock(&send_mutex);  
     }
+    return NULL;  
 }
 
 
@@ -182,6 +197,11 @@ void * sendUDPDatagram(void * unused)
         // check if the lost contain any msgs that needs to be sent over.
         // if no msgs then we will wait.
         if (List_count(list_of_send_msgs) == 0)
+        {
+            // wait here
+            pthread_cond_wait(&send_wait, &send_mutex);
+        }
+        if (List_count(list_of_send_msgs) == 100)
         {
             // wait here
             pthread_cond_wait(&send_wait, &send_mutex);
@@ -227,6 +247,7 @@ void * sendUDPDatagram(void * unused)
         memset(&buffer, 0, sizeof(buffer));
        
     }
+    return NULL;
 }
 
 //list remove is good list free can be used to to free whole list,
@@ -254,6 +275,7 @@ void* receiveUDPDatagram(void* unused)
         memset(&recieve_buffer, 0, sizeof(recieve_buffer));
        
     }
+    return NULL;
 }
 
 //Thread which prints characters to the screen (checks the list for msgs)
@@ -272,6 +294,10 @@ void* printsMessages(void* unused)
         {
             pthread_cond_wait(&print_wait, &receive_mutex);
         }
+        if (List_count(list_of_print_msgs) == 100)
+        {
+            pthread_cond_wait(&print_wait, &receive_mutex);
+        }
         // what if there are msgs in the list? then print them out
         while(List_count(list_of_print_msgs) > 0)
         {
@@ -282,7 +308,6 @@ void* printsMessages(void* unused)
 
             //printf("from remote server: %s", buffer);
             n = write(1, buffer, strlen(buffer));
-            printf("write %d\n", n);
             if (n < 0){
                 herror("Error writing to screen");
             }  
@@ -301,6 +326,7 @@ void* printsMessages(void* unused)
         free(msg);
         memset(&buffer, 0, sizeof(buffer));
     }
+    return NULL;
 }
 void shutDownAll()
 {
