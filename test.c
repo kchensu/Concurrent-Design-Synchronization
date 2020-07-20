@@ -105,7 +105,7 @@ int main(int argc, char **argv)
                     fprintf(stderr, "getaddrinfo (outgoing) %s\n", gai_strerror(status1));
                     exit(1);
                 }
-
+    fflush(stdout);
     // create 4 threads for each function
     // Brian workshop # 8
     //One of the threads does nothing other than await input from the keyboard. 
@@ -150,24 +150,12 @@ void* inputFromKeyboard(void* unused){
             herror("Error reading from keyboard");
         }
         int terminateIdx = (n < MSG_MAX_LENGTH) ? n : MSG_MAX_LENGTH - 1;
-        keyboard_buffer[terminateIdx] = 0;\
+        keyboard_buffer[terminateIdx] = 0;
         printf("sending over: %zu\n", strlen(keyboard_buffer));
         if (n == 0){
             break;
         }
-       
-
-        
-
-       
-        
-       
-       
-       
-        
-       
-       
-
+     
         pthread_mutex_lock(&send_mutex);
         // add the send msg to the list
         List_add(list_of_send_msgs, keyboard_buffer);
@@ -231,7 +219,17 @@ void * sendUDPDatagram(void * unused)
 
         }
         pthread_mutex_unlock(&send_mutex);
-        if (strcmp(buffer, "!\n") == 0)
+        // if (strcmp(buffer, "!\n") == 0)
+        // {
+        //     free(msg);
+        //     free(recieve_buffer);
+        //     free(keyboard_buffer);
+        //     recieve_buffer = NULL;
+        //     keyboard_buffer = NULL;
+        //     shutDownAll();
+        // }
+        char* endApp = strstr(buffer, "\n!\n");
+       if (strcmp(buffer, "!\n") == 0 || endApp !=NULL)
         {
             free(msg);
             free(recieve_buffer);
@@ -314,7 +312,8 @@ void* printsMessages(void* unused)
 
         }
         pthread_mutex_unlock(&receive_mutex);
-        if (strcmp(buffer, "!\n") == 0)
+        char* endApp = strstr(buffer, "\n!\n");
+        if (strcmp(buffer, "!\n") == 0 || endApp !=NULL)
         {
             free(msg);
             free(recieve_buffer);
