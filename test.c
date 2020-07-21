@@ -185,7 +185,6 @@ void * sendUDPDatagram(void * unused)
     char buffer[MSG_MAX_LENGTH];
     char* msg;
     while(1) {
-
         pthread_mutex_lock(&send_mutex);
         // check if the lost contain any msgs that needs to be sent over.
         // if no msgs then we will wait.
@@ -204,7 +203,6 @@ void * sendUDPDatagram(void * unused)
             // copy it over to the buffer 
             memset(&buffer, 0, sizeof(buffer));
             strncpy(buffer, msg, strlen(msg));
-            
             char* end_msg_here = strstr((buffer), "\n!\n");
             if(end_msg_here) {
                 int endIndex = end_msg_here ? end_msg_here - buffer : -1; 
@@ -297,7 +295,6 @@ void* printsMessages(void* unused)
         
         //search block for terminator
         char* endApp = strstr(buffer, "\n!\n");
-
         if (strcmp(buffer, "!\n") == 0 || endApp !=NULL) {
             free(msg);
             free(recieve_buffer);
