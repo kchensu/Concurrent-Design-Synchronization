@@ -11,15 +11,15 @@ clean:
 # done so we dont haveto type the commands
 # numbers just so we know host port
 run3333:
-	valgrind ./test 3333 ubuntu 6666
+	valgrind ./test 4444 ubuntu 6666
 
 run6666: 
-	valgrind ./test 6666 ubuntu 3333
+	valgrind ./test 6666 ubuntu 4444
 
 runCat3333:
-	cat someTestData.txt | ./test 3333 ubuntu 6666
+	cat someTestData.txt | ./test 4444 ubuntu 6666
 
 runOutPutTo6666:
-	./test 6666 ubuntu 3333 >> outPut.txt
+	./test 6666 ubuntu 4444 >> outPut.txt
 
 

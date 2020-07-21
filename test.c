@@ -45,7 +45,6 @@ void* printsMessages(void* unused);
 void* sendUDPDatagram(void* unused);
 void FreeItem(void* item);
 void shutDownAll();
-char *ltrim(char *str, const char *seps);
 int main(int argc, char **argv)
 {
     if(argc!=4) {
@@ -147,7 +146,11 @@ int main(int argc, char **argv)
 //since we add a new message to the List, we must signal to wake up a process that got blocked because there was no messages
 void* inputFromKeyboard(void* unused){
     
-    while (1) {   
+    while (1) {
+        if(List_count(list_of_send_msgs) == 100) {
+            printf("list is full exiting");
+            shutDownAll();
+        }
 
         keyboard_buffer = malloc(MSG_MAX_LENGTH);
 
@@ -206,6 +209,7 @@ void * sendUDPDatagram(void * unused)
 {
     // do i need to malloc this?
     char buffer[MSG_MAX_LENGTH];
+    char check_for_end_buffer[MSG_MAX_LENGTH];
     char* msg;
     while(1) {
 
@@ -226,12 +230,14 @@ void * sendUDPDatagram(void * unused)
             msg = List_remove(list_of_send_msgs);
             // copy it over to the buffer 
             memset(&buffer, 0, sizeof(buffer));
-            char* end_msg_here = strstr((buffer), "\n!\n");
+            strncpy(check_for_end_buffer, msg, strlen(msg));
+            
+            char* end_msg_here = strstr((check_for_end_buffer), "\n!\n");
             if(end_msg_here) {
-                int endIndex = end_msg_here ? end_msg_here - buffer : -1; 
-                printf("idex: %d", endIndex);
-                strncpy(buffer, msg, endIndex);
-                printf("buffer: %s", buffer);
+                int endIndex = end_msg_here ? end_msg_here - check_for_end_buffer : -1; 
+                printf("/n/nidex: %d/n/n", endIndex);
+                strncpy(buffer, msg, endIndex +3);
+                //printf("buffer: %s", buffer);
             } else {
                 strncpy(buffer, msg, strlen(msg));
             }
@@ -249,7 +255,7 @@ void * sendUDPDatagram(void * unused)
             // }
         
 
-            //printf("SENDING SENDING SENDING SENDING SENDING SENDING \n %s \n DONE DONE DONE DONE DONE DONE DONE\n", buffer);
+            printf("SENDING SENDING SENDING SENDING SENDING SENDING \n %s \n DONE DONE DONE DONE DONE DONE DONE\n", buffer);
             
             if ((numbytes = sendto(sockfd, buffer, sizeof(buffer), 0, result_out->ai_addr, result_out->ai_addrlen)) == -1) {
                 perror("talker: sendto");
@@ -280,6 +286,10 @@ void* receiveUDPDatagram(void* unused)
 {
     int num_bytes;
     while (1) {
+        if(List_count(list_of_print_msgs) == 100) {
+            printf("list is full exiting");
+            shutDownAll();
+        }
         recieve_buffer = malloc(MSG_MAX_LENGTH);
         if ((num_bytes = recvfrom(sockfd, recieve_buffer, MSG_MAX_LENGTH, 0,result_out->ai_addr,&(result_out->ai_addrlen))) == -1) {
             perror("recv");
@@ -363,23 +373,4 @@ void shutDownAll()
 void FreeItem(void* item)
 {
     free(item);
-}
-
-char *ltrim(char *str, const char *seps)
-{
-    size_t totrim;
-    if (seps == NULL) {
-        seps = "\t\n\v\f\r ";
-    }
-    totrim = strspn(str, seps);
-    if (totrim > 0) {
-        size_t len = strlen(str);
-        if (totrim == len) {
-            str[0] = '\0';
-        }
-        else {
-            memmove(str, str + totrim, len + 1 - totrim);
-        }
-    }
-    return str;
 }
