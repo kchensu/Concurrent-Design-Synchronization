@@ -11,7 +11,7 @@
 #include "list.h"
 #include <pthread.h>
 
-#define MSG_MAX_LENGTH 1024
+#define MSG_MAX_LENGTH 512
 struct addrinfo h_in, *result_in; //h_in points to a struct my addrinfo
 struct addrinfo h_out, *result_out; // h_out points to a struct their addrinfo
 struct hostent *h;
@@ -28,6 +28,8 @@ pthread_t sendDataOver;
 // if no item available, we would wait
 pthread_cond_t print_wait;
 pthread_cond_t send_wait;
+pthread_cond_t keyboard_wait;
+
 
 List* list_of_print_msgs;
 List* list_of_send_msgs;
@@ -43,7 +45,6 @@ void* printsMessages(void* unused);
 void* sendUDPDatagram(void* unused);
 void FreeItem(void* item);
 void shutDownAll();
-
 int main(int argc, char **argv)
 {
     if(argc!=4) {
@@ -152,24 +153,50 @@ void* inputFromKeyboard(void* unused){
         }
 
         keyboard_buffer = malloc(MSG_MAX_LENGTH);
-        byte_Tracker = read(0, keyboard_buffer, MSG_MAX_LENGTH);
+
+        byte_Tracker = read(0, keyboard_buffer, MSG_MAX_LENGTH); 
         
+        //printf("keyboard buffer: %s", keyboard_buffer);
+            
         if (byte_Tracker < 0) {
             herror("Error reading from keyboard");
         }
         int terminateIdx = (byte_Tracker < MSG_MAX_LENGTH) ? byte_Tracker : MSG_MAX_LENGTH - 1;
         keyboard_buffer[terminateIdx] = 0;
-        printf("sending over: %zu\n", strlen(keyboard_buffer));
-        if (byte_Tracker == 0){
+        //printf("readin how many bytes: %zu\n", strlen(keyboard_buffer));
+        // if (byte_Tracker == 0){
+        //     break;
+        // }
+        if(byte_Tracker == 0){
             break;
         }
-     
-        pthread_mutex_lock(&send_mutex);
+        //https://www.educative.io/edpresso/splitting-a-string-using-strtok-in-c
+        //char* token = strtok(keyboard_buffer, "\n");
+        // while(token != NULL) {
+        //     pthread_mutex_lock(&send_mutex);
+        //     // add the send msg to the list
+        //     printf("Token: %s", token);
+        //     strcat(token, "\n");
+        //     List_add(list_of_send_msgs, token);
+        //     // wake up the thread that got block because there was no msgs.
+        //     pthread_cond_signal(&send_wait);
+        //     pthread_mutex_unlock(&send_mutex); 
+        //     token = strtok(NULL, "\n");
+        // }
         // add the send msg to the list
+        // printf("Token: %s", keyboard_buffer);
+        // strcat(token, "\n");
+        pthread_mutex_lock(&send_mutex);
+        List_last(list_of_send_msgs);
         List_add(list_of_send_msgs, keyboard_buffer);
+        printf("***********************\n%s\n"
+            "*****************************\n", keyboard_buffer);
         // wake up the thread that got block because there was no msgs.
         pthread_cond_signal(&send_wait);
-        pthread_mutex_unlock(&send_mutex);  
+        pthread_mutex_unlock(&send_mutex); 
+        //token = strtok(NULL, "\n");
+
+
     }
     return NULL;  
 }
@@ -182,7 +209,7 @@ void * sendUDPDatagram(void * unused)
 {
     // do i need to malloc this?
     char buffer[MSG_MAX_LENGTH];
-    char check_for_end_buffer[MSG_MAX_LENGTH];
+    //char check_for_end_buffer[MSG_MAX_LENGTH];
     char* msg;
     while(1) {
 
@@ -196,22 +223,24 @@ void * sendUDPDatagram(void * unused)
         
         // if the list contain msgs that are waiting to get sent over
         while(List_count(list_of_send_msgs) > 0) {
-
             int numbytes;
             memset(&msg, 0, sizeof(msg));
             // remove it from the list
+            List_first(list_of_send_msgs);
             msg = List_remove(list_of_send_msgs);
-            // copy it over to the buffer
+            // copy it over to the buffer 
             memset(&buffer, 0, sizeof(buffer));
-            strncpy(check_for_end_buffer, msg, strlen(msg));
+            strncpy(buffer, msg, strlen(msg));
             
-            char* end_msg_here = strstr((check_for_end_buffer), "\n!\n");
+            char* end_msg_here = strstr((buffer), "\n!\n");
             if(end_msg_here) {
-                int endIndex = end_msg_here ? end_msg_here - check_for_end_buffer : -1; 
+                int endIndex = end_msg_here ? end_msg_here - buffer : -1; 
                 printf("/n/nidex: %d/n/n", endIndex);
+                memset(&buffer, 0, sizeof(buffer));
                 strncpy(buffer, msg, endIndex +3);
                 //printf("buffer: %s", buffer);
             } else {
+                memset(&buffer, 0, sizeof(buffer));
                 strncpy(buffer, msg, strlen(msg));
             }
 
@@ -238,7 +267,7 @@ void * sendUDPDatagram(void * unused)
         pthread_mutex_unlock(&send_mutex);
 
         char* endApp = strstr(buffer, "\n!\n");
-        if (strcmp(buffer, "!\n") == 0 || endApp !=NULL) {
+        if (strcmp(buffer, "!\n") == 0 || endApp != NULL) {
             free(msg);
             free(recieve_buffer);
             free(keyboard_buffer);
@@ -272,6 +301,7 @@ void* receiveUDPDatagram(void* unused)
         pthread_mutex_lock(&receive_mutex);
         // if msg received =  !, then terminate program
         // add receive msg to the list
+        List_last(list_of_print_msgs);
         List_add(list_of_print_msgs, recieve_buffer);
 
         // wake up process that was blocked because there was no msgs in the list
@@ -297,6 +327,7 @@ void* printsMessages(void* unused)
 
         while(List_count(list_of_print_msgs) > 0) {
             memset(&msg, 0, sizeof(msg));
+            List_first(list_of_print_msgs);
             msg = List_remove(list_of_print_msgs);
             //copy msg to be printed
             strncpy(buffer, msg, sizeof(buffer));
