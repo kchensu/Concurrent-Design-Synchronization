@@ -24,4 +24,15 @@ Remote port: 3333
 hello
 !
 Terminating the app.....
+Closing.....Starting......
+Hostname: ubuntu
+Local port: 6666
+IP address: 127.0.1.1
+Remote port: 3333
+Hi
+How are you
+fvojbweopfubv
+done
+!
+Terminating the app.....
 Closing.....
