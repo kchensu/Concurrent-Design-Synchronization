@@ -7,6 +7,9 @@ all:
 clean:
 	rm -f test
 
+# chage names to your specific machines	
+# done so we dont haveto type the commands
+# numbers just so we know host port
 run3333:
 	valgrind ./test 3333 ubuntu 6666
 
@@ -14,7 +17,7 @@ run6666:
 	valgrind ./test 6666 ubuntu 3333
 
 runCat3333:
-	cat someTestData.txt ./test 3333 ubuntu 6666
+	cat someTestData.txt | ./test 3333 ubuntu 6666
 
 runOutPutTo6666:
 	./test 6666 ubuntu 3333 >> outPut.txt
