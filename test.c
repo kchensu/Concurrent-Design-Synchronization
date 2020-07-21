@@ -12,13 +12,10 @@
 #include <pthread.h>
 
 #define MSG_MAX_LENGTH 1024
-#define NODES 100
 struct addrinfo h_in, *result_in; //h_in points to a struct my addrinfo
 struct addrinfo h_out, *result_out; // h_out points to a struct their addrinfo
 struct hostent *h;
-int sockfd;
-List* list_of_print_msgs;
-List* list_of_send_msgs;
+
 pthread_mutex_t receive_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t send_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -32,6 +29,14 @@ pthread_t sendDataOver;
 pthread_cond_t print_wait;
 pthread_cond_t send_wait;
 
+List* list_of_print_msgs;
+List* list_of_send_msgs;
+
+int sockfd;
+static char* recieve_buffer = NULL;
+static char* keyboard_buffer = NULL;
+static int byte_Tracker;
+
 void* inputFromKeyboard(void* unused);
 void* receiveUDPDatagram(void* unused);
 void* printsMessages(void* unused);
@@ -39,24 +44,21 @@ void* sendUDPDatagram(void* unused);
 void FreeItem(void* item);
 void shutDownAll();
 
-static char* recieve_buffer = NULL;
-static char* keyboard_buffer = NULL;
-static int n;
-
 int main(int argc, char **argv)
 {
-    if(argc!=4){
+    if(argc!=4) {
         printf("args: %d", argc);
         fprintf(stderr,"usage: enter all required parameters\n");
         return 1;
     }
-    int status;
+
     printf("Starting......\n");
     // create two list one to print characters the other to send data over
     list_of_print_msgs = List_create();
     list_of_send_msgs = List_create();
 
     // http:beej.us/guide/bgnet/pdf/bgnet_usl_c_2.pdf page 26
+
     // in
     memset(&h_in, 0, sizeof(h_in)); // make sure the struct is empty
     h_in.ai_family = AF_UNSPEC;     // don't care IPv4 or IPv6
@@ -69,9 +71,9 @@ int main(int argc, char **argv)
     h_out.ai_socktype = SOCK_DGRAM;   // UDP
     h_out.ai_flags = AI_PASSIVE;       // fill in IP
     
-  
-    if ((status = getaddrinfo(NULL, argv[1], &h_in, &result_in)) != 0) {
-        fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(status));
+    int host_status;
+    if ((host_status = getaddrinfo(NULL, argv[1], &h_in, &result_in)) != 0) {
+        fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(host_status));
         exit(1);
     }
 
@@ -82,27 +84,35 @@ int main(int argc, char **argv)
     }
 
     // bind it to the port we passed in to addrinfo
-
     if (bind(sockfd, result_in->ai_addr, result_in->ai_addrlen) == -1) { 
         close(sockfd);
         perror("bind failed");
         exit(1);
     }
+
     //hostname    
     //host IP
-   
     h = gethostbyname(argv[2]);
+    if (h == NULL)
+    {
+        printf("Error: gethostbyname failed");
+    }
     printf("Hostname: %s\n", h->h_name);
     printf("Local port: %s\n", argv[1]);
     printf("IP address: %s\n", inet_ntoa(*((struct in_addr *)h->h_addr)));
     printf("Remote port: %s\n", argv[3]);
+
     // http://beej.us/guide/bgnet/pdf/bgnet_usl_c_2.pdf page 26 - 27
-    int status1;
-    if ((status1 = getaddrinfo(inet_ntoa(*(struct in_addr *)h->h_addr_list[0]),
-                argv[3], &h_out, &result_out)) != 0) {
-                    fprintf(stderr, "getaddrinfo (outgoing) %s\n", gai_strerror(status1));
-                    exit(1);
-                }
+    int guest_status;
+    if ((guest_status = getaddrinfo(inet_ntoa(*(struct in_addr *)h->h_addr_list[0]),
+                argv[3], &h_out, &result_out)) != 0) 
+    {
+        fprintf(stderr, "getaddrinfo (outgoing) %s\n", gai_strerror(guest_status));
+        exit(1);
+    }
+
+    //fix wierd order of output to txt file
+    fflush(stdout);
 
     // create 4 threads for each function
     // Brian workshop # 8
@@ -127,9 +137,6 @@ int main(int argc, char **argv)
     printf("Closing.....");
     freeaddrinfo(result_in);
     freeaddrinfo(result_out);
-    //close(sockfd);
-    // do we need to freeaddrinfo(res);?????
-    //freeaddrinfo((struct in_addr *)h);
 
     return 0;
 }
@@ -138,26 +145,24 @@ int main(int argc, char **argv)
 //since we add a new message to the List, we must signal to wake up a process that got blocked because there was no messages
 void* inputFromKeyboard(void* unused){
     
-    while (1) 
-    {   
+    while (1) {   
         keyboard_buffer = malloc(MSG_MAX_LENGTH);
-        n = read(0, keyboard_buffer, MSG_MAX_LENGTH);
-        //printf("the number of bytes read: %d\n", n);
-        if (n < 0 ){
+        byte_Tracker = read(0, keyboard_buffer, MSG_MAX_LENGTH);
+        
+        if (byte_Tracker < 0) {
             herror("Error reading from keyboard");
         }
-        int terminateIdx = (n < MSG_MAX_LENGTH) ? n : MSG_MAX_LENGTH - 1;
+        int terminateIdx = (byte_Tracker < MSG_MAX_LENGTH) ? byte_Tracker : MSG_MAX_LENGTH - 1;
         keyboard_buffer[terminateIdx] = 0;
-        if(n == 0) 
-        {
+        printf("sending over: %zu\n", strlen(keyboard_buffer));
+        if (byte_Tracker == 0){
             break;
         }
+     
         pthread_mutex_lock(&send_mutex);
         // add the send msg to the list
         List_add(list_of_send_msgs, keyboard_buffer);
         // wake up the thread that got block because there was no msgs.
-        // don't think free this here is a good idea.
-        // it will free the buffer before printing.
         pthread_cond_signal(&send_wait);
         pthread_mutex_unlock(&send_mutex);  
     }
@@ -173,49 +178,35 @@ void * sendUDPDatagram(void * unused)
     // do i need to malloc this?
     char buffer[MSG_MAX_LENGTH];
     char* msg;
-    while(1)
-    {
+    while(1) {
+
         pthread_mutex_lock(&send_mutex);
         // check if the lost contain any msgs that needs to be sent over.
         // if no msgs then we will wait.
-        if (List_count(list_of_send_msgs) == 0)
-        {
+        if (List_count(list_of_send_msgs) == 0) {
             // wait here
             pthread_cond_wait(&send_wait, &send_mutex);
         }
-        if (List_count(list_of_send_msgs) == NODES)
-        {
-            // wait here
-            pthread_cond_wait(&send_wait, &send_mutex);
-        }
+        
         // if the list contain msgs that are waiting to get sent over
-        while(List_count(list_of_send_msgs) > 0)
-        {
-            
+        while(List_count(list_of_send_msgs) > 0) {
+
             int numbytes;
             memset(&msg, 0, sizeof(msg));
             // remove it from the list
             msg = List_remove(list_of_send_msgs);
             // copy it over to the buffer
-
             memset(&buffer, 0, sizeof(buffer));
-
             strncpy(buffer, msg, strlen(msg));   
-            // send data over to the remote address.
-            // result_out-> ai_addr
-            // result_out-> ai_addrlen
-           
-            //use strlen instead of sizeof???????
             if ((numbytes = sendto(sockfd, buffer, sizeof(buffer), 0, result_out->ai_addr, result_out->ai_addrlen)) == -1) {
                 perror("talker: sendto");
                 exit(1); 
             }
-
         }
         pthread_mutex_unlock(&send_mutex);
-        //char *p = strstr(buffer, "\n!\n");
-        if (strcmp(buffer, "!\n"))
-        {
+
+        char* endApp = strstr(buffer, "\n!\n");
+        if (strcmp(buffer, "!\n") == 0 || endApp !=NULL) {
             free(msg);
             free(recieve_buffer);
             free(keyboard_buffer);
@@ -223,12 +214,8 @@ void * sendUDPDatagram(void * unused)
             keyboard_buffer = NULL;
             shutDownAll();
         }
-        // will never get here if shutdown called?
         free(msg);
-       
-
         memset(&buffer, 0, sizeof(buffer));
-       
     }
     return NULL;
 }
@@ -238,11 +225,10 @@ void * sendUDPDatagram(void * unused)
 //Thread which awaits a UDP datagram (receive from the client) # recvfrom
 void* receiveUDPDatagram(void* unused)
 {
-    int numbytes;
-    while (1)
-    {
+    int num_bytes;
+    while (1) {
         recieve_buffer = malloc(MSG_MAX_LENGTH);
-        if ((numbytes = recvfrom(sockfd, recieve_buffer, MSG_MAX_LENGTH, 0,result_out->ai_addr,&(result_out->ai_addrlen))) == -1) {
+        if ((num_bytes = recvfrom(sockfd, recieve_buffer, MSG_MAX_LENGTH, 0,result_out->ai_addr,&(result_out->ai_addrlen))) == -1) {
             perror("recv");
             exit(1);
         }
@@ -256,7 +242,6 @@ void* receiveUDPDatagram(void* unused)
         pthread_cond_signal(&print_wait);
         pthread_mutex_unlock(&receive_mutex);
         memset(&recieve_buffer, 0, sizeof(recieve_buffer));
-       
     }
     return NULL;
 }
@@ -267,38 +252,29 @@ void* printsMessages(void* unused)
 {
     char buffer[MSG_MAX_LENGTH];
     char* msg;
-   
-
-    while(1)
-    {
+    while(1) {
         pthread_mutex_lock(&receive_mutex);
         // if the list is empty, there are no msgs...so we should wait!
-        if (List_count(list_of_print_msgs) == 0)
-        {
+        if (List_count(list_of_print_msgs) == 0) {
             pthread_cond_wait(&print_wait, &receive_mutex);
         }
-        if (List_count(list_of_print_msgs) == NODES)
-        {
-            pthread_cond_wait(&print_wait, &receive_mutex);
-        }
-        // what if there are msgs in the list? then print them out
-        while(List_count(list_of_print_msgs) > 0)
-        {
+
+        while(List_count(list_of_print_msgs) > 0) {
             memset(&msg, 0, sizeof(msg));
             msg = List_remove(list_of_print_msgs);
+            //copy msg to be printed
             strncpy(buffer, msg, sizeof(buffer));
-        
-
-            //printf("from remote server: %s", buffer);
-            n = write(1, buffer, strlen(buffer));
-            if (n < 0){
+            byte_Tracker = write(1, buffer, strlen(buffer));
+            if (byte_Tracker < 0) {
                 herror("Error writing to screen");
             }  
-
         }
         pthread_mutex_unlock(&receive_mutex);
-        if (strcmp(buffer, "!\n") == 0)
-        {
+        
+        //search block for terminator
+        char* endApp = strstr(buffer, "\n!\n");
+
+        if (strcmp(buffer, "!\n") == 0 || endApp !=NULL) {
             free(msg);
             free(recieve_buffer);
             free(keyboard_buffer);
@@ -311,6 +287,7 @@ void* printsMessages(void* unused)
     }
     return NULL;
 }
+
 void shutDownAll()
 {
     printf("Terminating the app.....\n");
@@ -326,8 +303,8 @@ void shutDownAll()
     List_free(list_of_print_msgs,FreeItem);
     List_free(list_of_send_msgs,FreeItem);
     printf("Closing.....\n");
-    //exit(1);
 }
+
 void FreeItem(void* item)
 {
     free(item);
