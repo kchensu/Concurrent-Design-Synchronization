@@ -9,20 +9,28 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #include "list.h"
-
+#include "printMsg.h"
 
 #define MSG_MAX_LENGTH 1024
 // #define PORT 2200
 
 struct sockaddr_in my_addr;
 struct hostent *h;
-int sockfd;
-char hostname[128];
+static int sockfd;
+static char hostname[128];
 socklen_t addr_len;
+static List *receivedMsgs;
+struct hostent *h;
+
 
 // https://pubs.opengroup.org/onlinepubs/007908799/xsh/pthread_mutex_lock.html
 
 int main(int argc, char **argv){
+
+    //start up modules
+    pthread_mutex_t dynamicListMutex = PTHREAD_MUTEX_INITIALIZER;
+    Print_init(receivedMsgs, dynamicListMutex);
+
     // need to pass in hostname, port, etc
     // argv[1] = my_port
     // argv[2] = remove machine name 
@@ -63,7 +71,14 @@ int main(int argc, char **argv){
     while(1){
 
         recvfrom(sockfd, buffer, MSG_MAX_LENGTH -1 , 0, (struct sockaddr *)&their_addr, &addr_len);
-        printf("Received from client: %s\n", buffer);
+        //printf("Received from client: %s\n", buffer);
+
+        // protect concurrent acces to list and add new msg to list
+        pthread_mutex_lock(&dynamicListMutex);
+        List_append(receivedMsgs, buffer);
+        pthread_mutex_unlock(&dynamicListMutex);
+
+
 
         memset(&buffer, 0, sizeof(buffer));
         printf("Send message:"); 
@@ -74,5 +89,7 @@ int main(int argc, char **argv){
 
     }
 
+    // close down threads
+    Print_shutdown();
     close(sockfd);
 }

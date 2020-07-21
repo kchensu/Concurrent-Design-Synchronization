@@ -65,6 +65,12 @@ int main(int argc, char **argv){
 
         //receive from Server
         recvfrom(sockfd, buffer, MSG_MAX_LENGTH-1, 0, NULL,NULL);
+        
+        // if msg received =  !, then terminate program
+        if (strcmp(buffer, "!\n") == 0){
+            printf("Terminating the app.....\n");
+            exit(0);
+        }
         printf("server response: %s\n", buffer);
 
     }
