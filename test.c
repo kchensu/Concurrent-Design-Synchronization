@@ -145,7 +145,12 @@ int main(int argc, char **argv)
 //since we add a new message to the List, we must signal to wake up a process that got blocked because there was no messages
 void* inputFromKeyboard(void* unused){
     
-    while (1) {   
+    while (1) {
+        if(List_count(list_of_send_msgs) == 100) {
+            printf("list is full exiting");
+            shutDownAll();
+        }
+
         keyboard_buffer = malloc(MSG_MAX_LENGTH);
         byte_Tracker = read(0, keyboard_buffer, MSG_MAX_LENGTH);
         
@@ -177,6 +182,7 @@ void * sendUDPDatagram(void * unused)
 {
     // do i need to malloc this?
     char buffer[MSG_MAX_LENGTH];
+    char check_for_end_buffer[MSG_MAX_LENGTH];
     char* msg;
     while(1) {
 
@@ -197,7 +203,33 @@ void * sendUDPDatagram(void * unused)
             msg = List_remove(list_of_send_msgs);
             // copy it over to the buffer
             memset(&buffer, 0, sizeof(buffer));
-            strncpy(buffer, msg, strlen(msg));   
+            strncpy(check_for_end_buffer, msg, strlen(msg));
+            
+            char* end_msg_here = strstr((check_for_end_buffer), "\n!\n");
+            if(end_msg_here) {
+                int endIndex = end_msg_here ? end_msg_here - check_for_end_buffer : -1; 
+                printf("/n/nidex: %d/n/n", endIndex);
+                strncpy(buffer, msg, endIndex +3);
+                //printf("buffer: %s", buffer);
+            } else {
+                strncpy(buffer, msg, strlen(msg));
+            }
+
+            
+            // look for !\n in block and trunicate message
+            //https://www.codingame.com/playgrounds/14213/how-to-play-with-strings-in-c/string-split
+            // char *end_msg_here;
+            // char* find_end = (strstr, "\n!\n");
+
+            // if(find_end != NULL) {
+            //     char delim[] = "\n!\n";
+            //     end_msg_here = strtok(buffer, delim);
+            //     printf("split buffer: %s", buffer);
+            // }
+        
+
+            printf("SENDING SENDING SENDING SENDING SENDING SENDING \n %s \n DONE DONE DONE DONE DONE DONE DONE\n", buffer);
+            
             if ((numbytes = sendto(sockfd, buffer, sizeof(buffer), 0, result_out->ai_addr, result_out->ai_addrlen)) == -1) {
                 perror("talker: sendto");
                 exit(1); 
@@ -227,6 +259,10 @@ void* receiveUDPDatagram(void* unused)
 {
     int num_bytes;
     while (1) {
+        if(List_count(list_of_print_msgs) == 100) {
+            printf("list is full exiting");
+            shutDownAll();
+        }
         recieve_buffer = malloc(MSG_MAX_LENGTH);
         if ((num_bytes = recvfrom(sockfd, recieve_buffer, MSG_MAX_LENGTH, 0,result_out->ai_addr,&(result_out->ai_addrlen))) == -1) {
             perror("recv");
