@@ -53,7 +53,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    printf("Starting......\n");
+    printf("\nStarting......\n");
     // create two list one to print characters the other to send data over
     list_of_print_msgs = List_create();
     list_of_send_msgs = List_create();
@@ -188,7 +188,6 @@ void * sendUDPDatagram(void * unused)
     char* msg;
     int end = 0;
     while(1) {
-        memset(&buffer, 0, sizeof(buffer));
         pthread_mutex_lock(&send_mutex);
         // check if the lost contain any msgs that needs to be sent over.
         // if no msgs then we will wait.
@@ -236,16 +235,12 @@ void * sendUDPDatagram(void * unused)
                     cond_check = 0;
                 }
             }
-
-
             char *c = strstr(buffer, "\n!");
             if (c)
             {
                 cond_check = 1;
 
             }
-
-           
             if ((numbytes = sendto(sockfd, buffer, sizeof(buffer), 0, result_out->ai_addr, result_out->ai_addrlen)) == -1) {
                 perror("talker: sendto");
                 exit(1); 
@@ -266,7 +261,6 @@ void * sendUDPDatagram(void * unused)
         }
         pthread_mutex_unlock(&send_mutex);
 
-    
     }
     return NULL;
 }
@@ -327,9 +321,7 @@ void* printsMessages(void* unused)
                 if (endIndex == 0){
                     end = 1;
                     memset(buffer, 0, sizeof(buffer));
-                    strncpy(buffer, msg, endIndex);
-                    
-                    
+                    strncpy(buffer, msg, endIndex);  
                 }
                 else
                 {
@@ -342,8 +334,6 @@ void* printsMessages(void* unused)
                 cond_check = 1;
 
             }
-
-
 
             byte_Tracker = write(1, buffer, strlen(buffer));
             if (byte_Tracker < 0) {
@@ -382,7 +372,7 @@ void shutDownAll()
     close(sockfd);
     List_free(list_of_print_msgs,FreeItem);
     List_free(list_of_send_msgs,FreeItem);
-    printf("Closing.....\n");
+    printf("\nClosing.....\n");
 }
 
 void FreeItem(void* item)
