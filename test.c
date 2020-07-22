@@ -11,6 +11,7 @@
 #include "list.h"
 #include <pthread.h>
 
+
 #define MSG_MAX_LENGTH 512
 struct addrinfo h_in, *result_in; 
 struct addrinfo h_out, *result_out; 
@@ -30,10 +31,11 @@ pthread_cond_t send_wait;
 List* list_of_print_msgs;
 List* list_of_send_msgs;
 
-int sockfd;
+static int sockfd;
 static char* recieve_buffer = NULL;
 static char* keyboard_buffer = NULL;
 static int byte_Tracker;
+static int cond_check = 0;
 
 void* inputFromKeyboard(void* unused);
 void* receiveUDPDatagram(void* unused);
@@ -145,21 +147,23 @@ int main(int argc, char **argv)
 //since we add a new message to the List, we must signal to wake up a process that got blocked because there was no messages
 void* inputFromKeyboard(void* unused){
     
+    char holder;
+    int buffer_max = 0;
     while (1) {
 
         if(List_count(list_of_send_msgs) == 100) {
-            printf("list is full exiting");
+            printf("Error: List is full exiting");
             shutDownAll();
         }
-
+        
         keyboard_buffer = malloc(MSG_MAX_LENGTH);
         byte_Tracker = read(0, keyboard_buffer, MSG_MAX_LENGTH); 
-    
         if (byte_Tracker < 0) {
             herror("Error reading from keyboard");
         }
-        int terminateIdx = (byte_Tracker < MSG_MAX_LENGTH) ? byte_Tracker : MSG_MAX_LENGTH - 1;
-        keyboard_buffer[terminateIdx] = 0;
+        // int terminateIdx = (byte_Tracker < MSG_MAX_LENGTH) ? byte_Tracker : MSG_MAX_LENGTH - 1;
+        // keyboard_buffer[terminateIdx] = 0;
+
         if(byte_Tracker == 0){
             break;
         }
@@ -169,9 +173,6 @@ void* inputFromKeyboard(void* unused){
         // wake up the thread that got block because there was no msgs.
         pthread_cond_signal(&send_wait);
         pthread_mutex_unlock(&send_mutex); 
-        //token = strtok(NULL, "\n");
-
-
     }
     return NULL;  
 }
@@ -184,6 +185,7 @@ void * sendUDPDatagram(void * unused)
     // do i need to malloc this?
     char buffer[MSG_MAX_LENGTH];
     char* msg;
+    int end = 0;
     while(1) {
         pthread_mutex_lock(&send_mutex);
         // check if the lost contain any msgs that needs to be sent over.
@@ -192,7 +194,6 @@ void * sendUDPDatagram(void * unused)
             // wait here
             pthread_cond_wait(&send_wait, &send_mutex);
         }
-        
         // if the list contain msgs that are waiting to get sent over
         while(List_count(list_of_send_msgs) > 0) {
             int numbytes;
@@ -204,36 +205,66 @@ void * sendUDPDatagram(void * unused)
             memset(&buffer, 0, sizeof(buffer));
             strncpy(buffer, msg, strlen(msg));
             char* end_msg_here = strstr((buffer), "\n!\n");
+            
+
             if(end_msg_here) {
                 int endIndex = end_msg_here ? end_msg_here - buffer : -1; 
                 printf("/n/nidex: %d/n/n", endIndex);
                 memset(&buffer, 0, sizeof(buffer));
                 strncpy(buffer, msg, endIndex +3);
                 //printf("buffer: %s", buffer);
-            } 
+            }
             else {
                 memset(&buffer, 0, sizeof(buffer));
                 strncpy(buffer, msg, strlen(msg));
             }
-
+           
             if ((numbytes = sendto(sockfd, buffer, sizeof(buffer), 0, result_out->ai_addr, result_out->ai_addrlen)) == -1) {
                 perror("talker: sendto");
                 exit(1); 
             }
+            printf("SENDING SENDING SENDING SENDING SENDING SENDING \n %s \n DONE DONE DONE DONE DONE DONE DONE\n", buffer);
+            printf("Buffer size: %ld\n", strlen(buffer));
+
+
+            if (cond_check == 1)
+            {
+                char *p = strstr(buffer, "\n");
+                int endIndex = p ? p - buffer : -1;
+                if (endIndex == 0){
+                    end = 1;
+
+                }
+                else
+                {
+                    cond_check = 0;
+                }
+            }
+
+
+            char *c = strstr(buffer, "\n!");
+            if (c)
+            {
+                cond_check = 1;
+
+            }
+
+            char* endApp = strstr(buffer, "\n!\n");
+            if (strcmp(buffer, "!\n") == 0 || endApp != NULL || end == 1) 
+            {
+                free(msg);
+                free(recieve_buffer);
+                free(keyboard_buffer);
+                recieve_buffer = NULL;
+                keyboard_buffer = NULL;
+                shutDownAll();
+            }
+            free(msg);
+            memset(&buffer, 0, sizeof(buffer));
         }
         pthread_mutex_unlock(&send_mutex);
 
-        char* endApp = strstr(buffer, "\n!\n");
-        if (strcmp(buffer, "!\n") == 0 || endApp != NULL) {
-            free(msg);
-            free(recieve_buffer);
-            free(keyboard_buffer);
-            recieve_buffer = NULL;
-            keyboard_buffer = NULL;
-            shutDownAll();
-        }
-        free(msg);
-        memset(&buffer, 0, sizeof(buffer));
+    
     }
     return NULL;
 }
@@ -289,20 +320,20 @@ void* printsMessages(void* unused)
             byte_Tracker = write(1, buffer, strlen(buffer));
             if (byte_Tracker < 0) {
                 herror("Error writing to screen");
+            }
+            //search block for terminator
+            char* endApp = strstr(buffer, "\n!\n");
+            if (strcmp(buffer, "!\n") == 0 || endApp !=NULL) 
+            {
+                free(msg);
+                free(recieve_buffer);
+                free(keyboard_buffer);
+                recieve_buffer = NULL;
+                keyboard_buffer = NULL;
+                shutDownAll();
             }  
         }
         pthread_mutex_unlock(&receive_mutex);
-        
-        //search block for terminator
-        char* endApp = strstr(buffer, "\n!\n");
-        if (strcmp(buffer, "!\n") == 0 || endApp !=NULL) {
-            free(msg);
-            free(recieve_buffer);
-            free(keyboard_buffer);
-            recieve_buffer = NULL;
-            keyboard_buffer = NULL;
-            shutDownAll();
-        }
         free(msg);
         memset(&buffer, 0, sizeof(buffer));
     }

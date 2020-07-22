@@ -17,9 +17,9 @@ run6666:
 	valgrind ./test 6666 kevin-Ubuntu-System 4444
 
 runCat3333:
-	cat someTestData.txt | ./test 4444 kevin-Ubuntu-System 6666
+	valgrind cat someTestData.txt | ./test 4444 kevin-Ubuntu-System 6666
 
 runOutPutTo6666:
-	./test 6666 kevin-Ubuntu-System 4444 >> outPut.txt
+	valgrind ./test 6666 kevin-Ubuntu-System 4444 >> outPut.txt
 
 

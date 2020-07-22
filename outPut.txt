@@ -1,44 +1,17 @@
 Starting......
-Hostname: ubuntu
+Hostname: kevin-Ubuntu-System
 Local port: 6666
-IP address: 127.0.1.1
+IP address: 192.168.0.176
 Remote port: 4444
-SCENE II. Capulet's orchard.
-Enter ROMEO
-ROMEO
-He jests at scars that never felt a wound.
-JULIET appears above at a window
+Zuckerberg, a doe-eyed 24-year-old C.E.O., founded Facebook in his dorm room at Harvard two years earlier, and the site quickly amassed nine million users. By 2006, students were posting heaps of personal details onto their Facebook pages, including lists of their favorite TV shows, whether they were dating (and whom), what music they had in rotation and the various ad hoc “groups” they had joined (like “Sex and the City” Lovers). All day long, they’d post “status” notes explaining their mood  “hating Monday,” “skipping class b/c i’m hung over.” After each party, they’d stagger home to the dorm and upload pictures of the soused revelry, and spend the morning after commenting on how wasted everybody looked. Facebook became the de facto public commons  the way students found out what everyone around them was like and what he or she was doing.
 
-But, soft! what light through yonder window breaks?
-It is the east, and Juliet is the sun.
-Arise, fair sun, and kill the envious moon,
-Who is already sick and pale with grief,
-That thou her maid art far more fair than she:
-Be not her maid, since she is envious;
-Her vestal livery is but sick and green
-And none but fools do wear it; cast it off.
-It is my lady, O, it is my love!
-O, that he knew she were!
-She speaks yet she says nothing: what of that?
-Her eye discourses; I will answer it.
-I am too bold, 'tis not to me she speaks:
-Two of the fairest stars in all the heaven,
-Having some business, do entreat her eyes
-To twinkle in their spheres till they return.
-What if her eyes were there, they in her head?
-The brightness of her cheek would shame those stars,
-As daylight doth a lamp; her eyes in heaven
-Would through the airy region stream so bright
-That birds would sing and think it were notnight.
-See, how she leans her cheek upon her hand!
-O, that I were a glove upon that hand,
-That I might touch that cheek!
+But Zuckerberg knew Facebook had one major problem: It required a lot of active surfing on the part of its users. Sure, every day your Facbook friends would update their profiles with some new tidbits; it might even be something particularly juicy, like changing their relationship status to “single” when they got dumped. But unless you visited each friend’s page every day, it might be days or weeks before you noticed the news, or you might miss it entirely. Browsing Facebook was like constantly poking your head into someone’s room to see how she was doing. It took work and forethought. In a sense, this gave Facebook an inherent, buil-in level of privacy, simply because if you had 200 friends on the site  a fairly typical number  there weren’t enough hours in the day to keep tabs on every friend all the time.
 
-JULIET
-Ay me!
+“It was very primitive,” Zuckerberg told me when I asked him about it last month. And so he decided to modernize. He developed something he called News Feed, a built-in service that would actively broadcast changes in a user’s page to every one of his or her friends. Students would no longer need to spend their time zpping around to examine each friend’s page, checking to see if there was any new information. Instead, they would just log into Facebook, and News Feed would appear: a single page that  like a social gazette from the 18th century  delivered a long list of up-to-the-minute gossip about their friends, around the clock, all in one place. “A stream of everything that’s going on in their lives,” as Zuckerberg put it.
 
-ROMEO
-She speaks:
+When students woke up that September morning and saw News Feed, the first reaction generally, was one of panic. Just about every little thing you changed on your page was now instantly blasted out to hundreds of friends, including potentially mortifying bits of news  Tim and Lisa broke up; Persaud is no longer friends with Matthew  and drunken photos someone snapped, then uploaded and tagged with names. Facebook had lost its vestigial bit of privacy. For students, it was now like being at a giant, open party filled with everyone you know, able to eavesdrop on what everyone else was aying, all the time.
+
+“Everyone was freaking out,” Ben Parr, then a junior at Northwestern University, told me recently. What particularly enraged Parr was that there wasn’t any way to opt out of News Feed, to “go private” and have all your information kept quiet. He created a Facebook group demanding Zuckerberg either scrap News Feed or provide privacy options. “Facebook users really think Facebook is becoming the Big Brother of the Internet, recording every single move,” a California studen told  
 !
 Terminating the app.....
 Closing.....Starting......
@@ -46,3 +19,63 @@ Hostname: kevin-Ubuntu-System
 Local port: 6666
 IP address: 192.168.0.176
 Remote port: 4444
+Zuckerberg, a doe-eyed 24-year-old C.E.O., founded Facebook in his dorm room at Harvard two years earlier, and the site quickly amassed nine million users. By 2006, students were posting heaps of personal details onto their Facebook pages, including lists of their favorite TV shows, whether they were dating (and whom), what music they had in rotation and the various ad hoc “groups” they had joined (like “Sex and the City” Lovers). All day long, they’d post “status” notes explaining their mood  “hating Monday,” “skipping class b/c i’m hung over.” After each party, they’d stagger home to the dorm and upload pictures of the soused revelry, and spend the morning after commenting on how wasted everybody looked. Facebook became the de facto public commons  the way students found out what everyone around them was like and what he or she was doing.
+
+But Zuckerberg knew Facebook had one major problem: It required a lot of active surfing on the part of its users. Sure, every day your Facbook friends would update their profiles with some new tidbits; it might even be something particularly juicy, like changing their relationship status to “single” when they got dumped. But unless you visited each friend’s page every day, it might be days or weeks before you noticed the news, or you might miss it entirely. Browsing Facebook was like constantly poking your head into someone’s room to see how she was doing. It took work and forethought. In a sense, this gave Facebook an inherent, buil-in level of privacy, simply because if you had 200 friends on the site  a fairly typical number  there weren’t enough hours in the day to keep tabs on every friend all the time.
+
+“It was very primitive,” Zuckerberg told me when I asked him about it last month. And so he decided to modernize. He developed something he called News Feed, a built-in service that would actively broadcast changes in a user’s page to every one of his or her friends. Students would no longer need to spend their time zpping around to examine each friend’s page, checking to see if there was any new information. Instead, they would just log into Facebook, and News Feed would appear: a single page that  like a social gazette from the 18th century  delivered a long list of up-to-the-minute gossip about their friends, around the clock, all in one place. “A stream of everything that’s going on in their lives,” as Zuckerberg put it.
+
+When students woke up that September morning and saw News Feed, the first reaction generally, was one of panic. Just about every little thing you changed on your page was now instantly blasted out to hundreds of friends, including potentially mortifying bits of news  Tim and Lisa broke up; Persaud is no longer friends with Matthew  and drunken photos someone snapped, then uploaded and tagged with names. Facebook had lost its vestigial bit of privacy. For students, it was now like being at a giant, open party filled with everyone you know, able to eavesdrop on what everyone else was aying, all the time.
+
+“Everyone was freaking out,” Ben Parr, then a junior at Northwestern University, told me recently. What particularly enraged Parr was that there wasn’t any way to opt out of News Feed, to “go private” and have all your information kept quiet. He created a Facebook group demanding Zuckerberg either scrap News Feed or provide privacy options. “Facebook users really think Facebook is becoming the Big Brother of the Internet, recording every single move,” a California studen told  
+!
+Terminating the app.....
+Closing.....Starting......
+Hostname: kevin-Ubuntu-System
+Local port: 6666
+IP address: 192.168.0.176
+Remote port: 4444
+Zuckerberg, a doe-eyed 24-year-old C.E.O., founded Facebook in his dorm room at Harvard two years earlier, and the site quickly amassed nine million users. By 2006, students were posting heaps of personal details onto their Facebook pages, including lists of their favorite TV shows, whether they were dating (and whom), what music they had in rotation and the various ad hoc “groups” they had joined (like “Sex and the City” Lovers). All day long, they’d post “status” notes explaining their moods  “hating Monday,” “skipping class b/c i’m hung over.” After each party, they’d stagger home to the dorm and upload pictures of the soused revelry, and spend the morning after commenting on how wasted everybody looked. Facebook became the de facto public commons  the way students found out what everyone around them was like and what he or she was doing.
+
+But Zuckerberg knew Facebook had one major problem: It required a lot of active surfing on the part of its users. Sure, every day your Facebook friends would update their profiles with some new tidbits; it might even be something particularly juicy, like changing their relationship status to “single” when they got dumped. But unless you visited each friend’s page every day, it might be days or weeks before you noticed the news, or you might miss it entirely. Browsing Facebook was like constantly poking your head into someone’s room to see how she was doing. It took work and forethought. In a sense, this gave Facebook an inherent, built-in level of privacy, simply because if you had 200 friends on the site  a fairly typical number  there weren’t enough hours in the day to keep tabs on every friend all the time.
+
+“It was very primitive,” Zuckerberg told me when I asked him about it last month. And so he decided to modernize. He developed something he called News Feed, a built-in service that would actively broadcast changes in a user’s page to every one of his or her friends. Students would no longer need to spend their time zipping around to examine each friend’s page, checking to see if there was any new information. Instead, they would just log into Facebook, and News Feed would appear: a single page that  like a social gazette from the 18th century  delivered a long list of up-to-the-minute gossip about their friends, around the clock, all in one place. “A stream of everything that’s going on in their lives,” as Zuckerberg put it.
+
+When students woke up that September morning and saw News Feed, the first reaction, generally, was one of panic. Just about every little thing you changed on your page was now instantly blasted out to hundreds of friends, including potentially mortifying bits of news  Tim and Lisa broke up; Persaud is no longer friends with Matthew  and drunken photos someone snapped, then uploaded and tagged with names. Facebook had lost its vestigial bit of privacy. For students, it was now like being at a giant, open party filled with everyone you know, able to eavesdrop on what everyone else was saying, all the time.
+
+“Everyone was freaking out,” Ben Parr, then a junior at Northwestern University, told me recently. What particularly enraged Parr was that there wasn’t any way to opt out of News Feed, to “go private” and have all your information kept quiet. He created a Facebook group demanding Zuckerberg either scrap News Feed or provide privacy options. “Facebook users really think Facebook is becoming the Big Brother of the Internet, recording every single move,” a California student told  
+!
+Terminating the app.....
+Closing.....Starting......
+Hostname: kevin-Ubuntu-System
+Local port: 6666
+IP address: 192.168.0.176
+Remote port: 4444
+Zuckerberg, a doe-eyed 24-year-old C.E.O., founded Facebook in his dorm room at Harvard two years earlier, and the site quickly amassed nine million users. By 2006, students were posting heaps of personal details onto their Facebook pages, including lists of their favorite TV shows, whether they were dating (and whom), what music they had in rotation and the various ad hoc “groups” they had joined (like “Sex and the City” Lovers). All day long, they’d post “status” notes explaining their moods  “hating Monday,” “skipping class b/c i’m hung over.” After each party, they’d stagger home to the dorm and upload pictures of the soused revelry, and spend the morning after commenting on how wasted everybody looked. Facebook became the de facto public commons  the way students found out what everyone around them was like and what he or she was doing.
+
+But Zuckerberg knew Facebook had one major problem: It required a lot of active surfing on the part of its users. Sure, every day your Facebook friends would update their profiles with some new tidbits; it might even be something particularly juicy, like changing their relationship status to “single” when they got dumped. But unless you visited each friend’s page every day, it might be days or weeks before you noticed the news, or you might miss it entirely. Browsing Facebook was like constantly poking your head into someone’s room to see how she was doing. It took work and forethought. In a sense, this gave Facebook an inherent, built-in level of privacy, simply because if you had 200 friends on the site  a fairly typical number  there weren’t enough hours in the day to keep tabs on every friend all the time.
+
+“It was very primitive,” Zuckerberg told me when I asked him about it last month. And so he decided to modernize. He developed something he called News Feed, a built-in service that would actively broadcast changes in a user’s page to every one of his or her friends. Students would no longer need to spend their time zipping around to examine each friend’s page, checking to see if there was any new information. Instead, they would just log into Facebook, and News Feed would appear: a single page that  like a social gazette from the 18th century  delivered a long list of up-to-the-minute gossip about their friends, around the clock, all in one place. “A stream of everything that’s going on in their lives,” as Zuckerberg put it.
+
+When students woke up that September morning and saw News Feed, the first reaction, generally, was one of panic. Just about every little thing you changed on your page was now instantly blasted out to hundreds of friends, including potentially mortifying bits of news  Tim and Lisa broke up; Persaud is no longer friends with Matthew  and drunken photos someone snapped, then uploaded and tagged with names. Facebook had lost its vestigial bit of privacy. For students, it was now like being at a giant, open party filled with everyone you know, able to eavesdrop on what everyone else was saying, all the time.
+
+“Everyone was freaking out,” Ben Parr, then a junior at Northwestern University, told me recently. What particularly enraged Parr was that there wasn’t any way to opt out of News Feed, to “go private” and have all your information kept quiet. He created a Facebook group demanding Zuckerberg either scrap News Feed or provide privacy options. “Facebook users really think Facebook is becoming the Big Brother of the Internet, recording every single move,” a California student told  
+!
+Terminating the app.....
+Closing.....Starting......
+Hostname: kevin-Ubuntu-System
+Local port: 6666
+IP address: 192.168.0.176
+Remote port: 4444
+Zuckerberg, a doe-eyed 24-year-old C.E.O., founded Facebook in his dorm room at Harvard two years earlier, and the site quickly amassed nine million users. By 2006, students were posting heaps of personal details onto their Facebook pages, including lists of their favorite TV shows, whether they were dating (and whom), what music they had in rotation and the various ad hoc “groups” they had joined (like “Sex and the City” Lovers). All day long, they’d post “status” notes explaining their moods  “hating Monday,” “skipping class b/c i’m hung over.” After each party, they’d stagger home to the dorm and upload pictures of the soused revelry, and spend the morning after commenting on how wasted everybody looked. Facebook became the de facto public commons  the way students found out what everyone around them was like and what he or she was doing.
+
+But Zuckerberg knew Facebook had one major problem: It required a lot of active surfing on the part of its users. Sure, every day your Facebook friends would update their profiles with some new tidbits; it might even be something particularly juicy, like changing their relationship status to “single” when they got dumped. But unless you visited each friend’s page every day, it might be days or weeks before you noticed the news, or you might miss it entirely. Browsing Facebook was like constantly poking your head into someone’s room to see how she was doing. It took work and forethought. In a sense, this gave Facebook an inherent, built-in level of privacy, simply because if you had 200 friends on the site  a fairly typical number  there weren’t enough hours in the day to keep tabs on every friend all the time.
+
+“It was very primitive,” Zuckerberg told me when I asked him about it last month. And so he decided to modernize. He developed something he called News Feed, a built-in service that would actively broadcast changes in a user’s page to every one of his or her friends. Students would no longer need to spend their time zipping around to examine each friend’s page, checking to see if there was any new information. Instead, they would just log into Facebook, and News Feed would appear: a single page that  like a social gazette from the 18th century  delivered a long list of up-to-the-minute gossip about their friends, around the clock, all in one place. “A stream of everything that’s going on in their lives,” as Zuckerberg put it.
+
+When students woke up that September morning and saw News Feed, the first reaction, generally, was one of panic. Just about every little thing you changed on your page was now instantly blasted out to hundreds of friends, including potentially mortifying bits of news  Tim and Lisa broke up; Persaud is no longer friends with Matthew  and drunken photos someone snapped, then uploaded and tagged with names. Facebook had lost its vestigial bit of privacy. For students, it was now like being at a giant, open party filled with everyone you know, able to eavesdrop on what everyone else was saying, all the time.
+
+“Everyone was freaking out,” Ben Parr, then a junior at Northwestern University, told me recently. What particularly enraged Parr was that there wasn’t any way to opt out of News Feed, to “go private” and have all your information kept quiet. He created a Facebook group demanding Zuckerberg either scrap News Feed or provide privacy options. “Facebook users really think Facebook is becoming the Big Brother of the Internet, recording every single move,” a California student told  
+!
+Terminating the app.....
+Closing.....
