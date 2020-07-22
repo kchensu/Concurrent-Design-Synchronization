@@ -147,8 +147,7 @@ int main(int argc, char **argv)
 //since we add a new message to the List, we must signal to wake up a process that got blocked because there was no messages
 void* inputFromKeyboard(void* unused){
     
-    char holder;
-    int buffer_max = 0;
+  
     while (1) {
 
         if(List_count(list_of_send_msgs) == 100) {
@@ -157,6 +156,7 @@ void* inputFromKeyboard(void* unused){
         }
         
         keyboard_buffer = malloc(MSG_MAX_LENGTH);
+        memset(keyboard_buffer, 0, sizeof(keyboard_buffer));
         byte_Tracker = read(0, keyboard_buffer, MSG_MAX_LENGTH); 
         if (byte_Tracker < 0) {
             herror("Error reading from keyboard");
@@ -184,9 +184,11 @@ void * sendUDPDatagram(void * unused)
 {
     // do i need to malloc this?
     char buffer[MSG_MAX_LENGTH];
+    
     char* msg;
     int end = 0;
     while(1) {
+        memset(&buffer, 0, sizeof(buffer));
         pthread_mutex_lock(&send_mutex);
         // check if the lost contain any msgs that needs to be sent over.
         // if no msgs then we will wait.
@@ -198,34 +200,25 @@ void * sendUDPDatagram(void * unused)
         while(List_count(list_of_send_msgs) > 0) {
             int numbytes;
             memset(&msg, 0, sizeof(msg));
+            memset(&buffer, 0, sizeof(buffer));
             // remove it from the list
             List_first(list_of_send_msgs);
             msg = List_remove(list_of_send_msgs);
             // copy it over to the buffer 
-            memset(&buffer, 0, sizeof(buffer));
             strncpy(buffer, msg, strlen(msg));
             char* end_msg_here = strstr((buffer), "\n!\n");
             
 
             if(end_msg_here) {
                 int endIndex = end_msg_here ? end_msg_here - buffer : -1; 
-                printf("/n/nidex: %d/n/n", endIndex);
+
                 memset(&buffer, 0, sizeof(buffer));
-                strncpy(buffer, msg, endIndex +3);
-                //printf("buffer: %s", buffer);
+                strncpy(buffer, msg, endIndex + 3);
             }
             else {
                 memset(&buffer, 0, sizeof(buffer));
                 strncpy(buffer, msg, strlen(msg));
             }
-           
-            if ((numbytes = sendto(sockfd, buffer, sizeof(buffer), 0, result_out->ai_addr, result_out->ai_addrlen)) == -1) {
-                perror("talker: sendto");
-                exit(1); 
-            }
-            printf("SENDING SENDING SENDING SENDING SENDING SENDING \n %s \n DONE DONE DONE DONE DONE DONE DONE\n", buffer);
-            printf("Buffer size: %ld\n", strlen(buffer));
-
 
             if (cond_check == 1)
             {
@@ -233,6 +226,9 @@ void * sendUDPDatagram(void * unused)
                 int endIndex = p ? p - buffer : -1;
                 if (endIndex == 0){
                     end = 1;
+                    memset(buffer, 0, sizeof(buffer));
+                    strncpy(buffer, msg, endIndex);
+
 
                 }
                 else
@@ -249,6 +245,12 @@ void * sendUDPDatagram(void * unused)
 
             }
 
+           
+            if ((numbytes = sendto(sockfd, buffer, sizeof(buffer), 0, result_out->ai_addr, result_out->ai_addrlen)) == -1) {
+                perror("talker: sendto");
+                exit(1); 
+            }
+            //printf("SENDING SENDING SENDING SENDING SENDING SENDING \n %s \n DONE DONE DONE DONE DONE DONE DONE\n", buffer);
             char* endApp = strstr(buffer, "\n!\n");
             if (strcmp(buffer, "!\n") == 0 || endApp != NULL || end == 1) 
             {
@@ -304,6 +306,7 @@ void* printsMessages(void* unused)
 {
     char buffer[MSG_MAX_LENGTH];
     char* msg;
+    int end = 0;
     while(1) {
         pthread_mutex_lock(&receive_mutex);
         // if the list is empty, there are no msgs...so we should wait!
@@ -317,13 +320,38 @@ void* printsMessages(void* unused)
             msg = List_remove(list_of_print_msgs);
             //copy msg to be printed
             strncpy(buffer, msg, sizeof(buffer));
+            if (cond_check == 1)
+            {
+                char *p = strstr(buffer, "\n");
+                int endIndex = p ? p - buffer : -1;
+                if (endIndex == 0){
+                    end = 1;
+                    memset(buffer, 0, sizeof(buffer));
+                    strncpy(buffer, msg, endIndex);
+                    
+                    
+                }
+                else
+                {
+                    cond_check = 0;
+                }
+            }
+            char *c = strstr(buffer, "\n!");
+            if (c)
+            {
+                cond_check = 1;
+
+            }
+
+
+
             byte_Tracker = write(1, buffer, strlen(buffer));
             if (byte_Tracker < 0) {
                 herror("Error writing to screen");
             }
             //search block for terminator
             char* endApp = strstr(buffer, "\n!\n");
-            if (strcmp(buffer, "!\n") == 0 || endApp !=NULL) 
+            if (strcmp(buffer, "!\n") == 0 || endApp !=NULL||  end == 1) 
             {
                 free(msg);
                 free(recieve_buffer);
@@ -342,7 +370,7 @@ void* printsMessages(void* unused)
 
 void shutDownAll()
 {
-    printf("Terminating the app.....\n");
+    printf("\nTerminating the app.....\n");
     pthread_cancel(waitKeyboardInput);
     pthread_cancel(waitUDPdatagram);
     pthread_cancel(printCharacters);

@@ -14,7 +14,7 @@ run3333:
 	valgrind ./test 4444 kevin-Ubuntu-System 6666
 
 run6666: 
-	valgrind ./test 6666 kevin-Ubuntu-System 4444
+	./test 6666 kevin-Ubuntu-System 4444
 
 runCat3333:
 	valgrind cat someTestData.txt | ./test 4444 kevin-Ubuntu-System 6666
